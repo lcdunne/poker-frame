@@ -190,6 +190,19 @@ class Deck:
         
         return [self.cards.pop() for _ in range(n)]
 
+
+# These all return True if the hand category is denoted by the key
+# Should take a hand.rankings (for the numerical) and hand.suits for the flushes
+histmatch = {
+    'PAIR': lambda x: len(x)==4,
+    'TWO_PAIR': lambda x: sorted(x.values) == [1,2,2],
+    'THREE_OF_A_KIND': lambda x: sorted(x.values) == [1,1,3],
+    'STRAIGHT': lambda x: max(x.values) - min(x.values) in [4, 12],
+    'FULL_HOUSE': lambda x: sorted(x.values) == [2,2],
+    'FOUR_OF_A_KIND': lambda x: sorted(x.values) == [1,4],
+}
+
+
 class HoleCards:
     def __init__(self, deck):
         pass
@@ -204,6 +217,17 @@ class Hand:
         self.strength = 0
         self.types = {k: [] for k in HandStrengths.items()}
         self._current_index = 0
+        self.rank_funcs = {
+            HandStrengths.ROYAL_FLUSH.name: self.is_royalflush,
+            HandStrengths.STRAIGHT_FLUSH.name: self.is_straightflush,
+            HandStrengths.FOUR_OF_A_KIND.name: self.is_fourofakind,
+            HandStrengths.FULL_HOUSE.name: self.is_fullhouse,
+            HandStrengths.FLUSH.name: self.is_flush,
+            HandStrengths.STRAIGHT.name: self.is_straight,
+            HandStrengths.THREE_OF_A_KIND.name: self.is_threeofakind,
+            HandStrengths.TWO_PAIR.name: self.is_twopair,
+            HandStrengths.PAIR.name: self.is_pair,
+        }
     
     def __iter__(self):
         return self
@@ -233,54 +257,56 @@ class Hand:
     @property
     def suits(self):
         return [c.suit for c in self.cards]
+    
+    @property
+    def rankhist(self):
+        return Counter(self.rankings)
+    
+    @property
+    def suithist(self):
+        return Counter(self.suits)
+    
+    def rank_all_hands(self):
+        self.temp = []
+        for handstrength, fun in self.rank_funcs.items():
+            hit = fun()
+            if hit:
+                print(handstrength)
+                self.temp.append(self.cards)
+                self.types[handstrength].append(self.cards)
+                break
+        if not hit:
+            # Must be a highcard.
+            self.add_handtype(HandStrengths.HIGH_CARD)
+
 
     # Hand Strengh Categorisation. Each one has a different check
     def is_royalflush(self):
-        self.strength = max(900, self.strength)
-        self.add_handtype(HandStrengths.ROYAL_FLUSH)
-        return all([self.is_straight(), self.is_flush(), max(self).rank == 14])
+        return self.is_straightflush() and max(self) == 14
 
     def is_straightflush(self):
-        self.strength = max(8, self.strength)
-        self.add_handtype(HandStrengths.STRAIGHT_FLUSH)
         return self.is_straight() and self.is_flush()
 
     def is_fourofakind(self):
-        # Hist is 4 & 1
-        self.strength = max(7, self.strength)
-        self.add_handtype(HandStrengths.FOUR_OF_A_KIND)
-        return 4 in Counter(self.rankings).values()
+        return list(self.rankhist.values()) == [1, 4]
 
     def is_fullhouse(self):
-        # Hist is 3 & 2
-        self.strength = max(6, self.strength)
-        self.add_handtype(HandStrengths.FULL_HOUSE)
-        return (3 in Counter(self.rankings).values()) and (2 in Counter(self.rankings).values())
+        return list(self.rankhist.values()) == [2, 3]
 
     def is_flush(self):
-        self.strength = max(5, self.strength)
-        self.add_handtype(HandStrengths.FLUSH)
-        return 5 in Counter(self.suits).values()
+        return len(self.suithist) == 1
 
     def is_straight(self):
-        self.strength = max(4, self.strength)
-        self.add_handtype(HandStrengths.STRAIGHT)
-        return self.rankings == list(range(min(self.rankings), max(self.rankings)+1))
+        return max(self.rankings) - min(self.rankings) in [4, 12]
 
     def is_threeofakind(self):
-        self.strength = max(3, self.strength)
-        self.add_handtype(HandStrengths.THREE_OF_A_KIND)
-        return 3 in Counter(self.rankings).values()
+        return list(self.rankhist.values()) == [1, 1, 3]
     
     def is_twopair(self):
-        self.strength = max(2, self.strength)
-        self.add_handtype(HandStrengths.TWO_PAIR)
-        return 2 in Counter(Counter(self.rankings).values())
+        return list(self.rankhist.values()) == [1, 2, 2]
     
     def is_pair(self):
-        self.strength = max(1, self.strength)
-        self.add_handtype(HandStrengths.PAIR)
-        return 2 in Counter(self.rankings).values()
+        return len(self.rankhist) == 4
     
     def add_handtype(self, handstrength):
         # Use in each evaluation check
@@ -293,17 +319,8 @@ class HandSpace:
     def __init__(self, holecards: list, community_cards: list):
         self.holecards = holecards
         self.community_cards = community_cards
-        self.space = sorted(self.holecards + self.community_cards)
-    
-    # def get_draws(self):
-    #     pass
-    
-    # def get_backdoor_draws(self):
-    #     pass
-    
-    # def get_madehands(self):
-    #     pass
-    
+        self.space = sorted(self.holecards + self.community_cards)[::-1]
+
     def getcombos(self, k=None):
         # Gets all combinations in hand space
         if k is None:
@@ -323,56 +340,16 @@ if __name__ == '__main__':
     deck = Deck()
     deck.shuffle()
 
-    hole = deck.take(names=['As', 'Ks'])
-    community = deck.take(names=['Qs', 'Js', 'Ts', '4c', '2d'])
-    
+    hole = deck.take(names=['7s', '2h'])
+    community = deck.take(names=['8s', '9d', 'As', 'Qh', '3d'])
     hs = HandSpace(hole, community)
     
     results = []
     for i, combo in enumerate(hs.getcombos()):
         hand = Hand(combo)
-        print(f"Iteration {i}\t{hand}\tStarting strength: {hand.strength}")
-        cnt = Counter(hand.rankings)
-        
-        if hand.is_royalflush():
-            print(f"Found royal flush on iteration {i}: ", hand, hand.strength)
-            results.append((i, hand.strength))
-        
-        elif hand.is_straightflush():
-            print(f"Found straigth flush on iteration {i}: ", hand, hand.strength)
-            results.append((i, hand.strength))
-        
-        elif hand.is_fourofakind():
-            print(f"Found quads on iteration {i}: ", hand, hand.strength)
-            results.append((i, hand.strength))
-        
-        elif hand.is_fullhouse():
-            print(f"Found full house on iteration {i}: ", hand, hand.strength)
-            results.append((i, hand.strength))
 
-        elif hand.is_flush():
-            print(f"Found flush on iteration {i}: ", hand, hand.strength)
-            results.append((i, hand.strength))
+        print(f"iteration {i}: {hand} {'-'*70} #")
 
-        elif hand.is_straight():
-            print(f"Found straight on iteration {i}: ", hand, hand.strength)
-            results.append((i, hand.strength))
-        
-        elif hand.is_threeofakind():
-            print(f"Found three of a kind in iteration {i}:", hand, hand.strength)
-            results.append((i, hand.strength))
-        
-        elif hand.is_twopair():
-            print(f"Found 2-pair on iteration {i}:", hand, hand.strength)
-            results.append((i, hand.strength))
-
-        elif hand.is_pair():
-            print(f"Found pair on iteration {i}:", hand, hand.strength)
-            results.append((i, hand.strength))
-        else:
-            print(f"No made hand (high card) on iteration {i}:", hand, hand.strength)
-            results.append((i, 0))
+        hand.rank_all_hands()
+        print(hand.types)
         print()
-    
-    
-    
