@@ -17,10 +17,10 @@ class ExtendedEnum(Enum):
         return list(map(lambda c: c.value, cls))
 
 class Suit(ExtendedEnum):
-    CLUBS = auto()
-    DIAMONDS = auto()
-    HEARTS = auto()
-    SPADES = auto()
+    CLUBS = 'c'
+    DIAMONDS = 'd'
+    HEARTS = 'h'
+    SPADES = 's'
 
 class Rank(IntEnum, ExtendedEnum):
     # Access with Rank.TWO.name, Rank.TWO.value
@@ -218,9 +218,19 @@ class CommunityCards:
     def __init__(self, deck):
         pass
 
+def card_from_name(name: str):
+    # Construct a card from a name like 'Ts', 5d', Ah', ...
+    rank, suit = name
+    return Card(rank=Rank[RankName(rank).name], suit=Suit(suit).name)
 
 class Hand:
-    def __init__(self, cards):
+    def __init__(self, cards=None, names: list=None):
+        if not any([cards, names]):
+            raise ValueError("Need either `cards` or `names` but got None for both")
+        
+        if cards is None:
+            cards = [card_from_name(name) for name in names]
+        
         self.cards = cards
         self.types = {k: [] for k in HandStrengths.items()}
         self._current_index = 0
