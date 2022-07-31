@@ -1,10 +1,8 @@
 import random
-from math import comb
 from collections import Counter
 from itertools import combinations
-from enum import Enum, auto, IntEnum
+from enum import Enum, IntEnum
 from dataclasses import dataclass, field
-
 
 
 class ExtendedEnum(Enum):
@@ -69,18 +67,6 @@ class HandStrengths(IntEnum, ExtendedEnum):
     STRAIGHT_FLUSH = 8
     ROYAL_FLUSH = 9
 
-HAND_STRENGTHS = {
-    'HIGH_CARD': 0,
-    'PAIR': 1,
-    'TWO_PAIR': 2,
-    'THREE_OF_A_KIND': 3,
-    'STRAIGHT': 4,
-    'FLUSH': 5,
-    'FULL_HOUSE': 6,
-    'FOUR_OF_A_KIND': 7,
-    'STRAIGHT_FLUSH': 8,
-    'ROYAL_FLUSH': 9
-}
 
 @dataclass(order=True)
 class Card:
@@ -197,19 +183,6 @@ class Deck:
         
         return [self.cards.pop() for _ in range(n)]
 
-
-# These all return True if the hand category is denoted by the key
-# Should take a hand.rankings (for the numerical) and hand.suits for the flushes
-histmatch = {
-    'PAIR': lambda x: len(x)==4,
-    'TWO_PAIR': lambda x: sorted(x.values) == [1,2,2],
-    'THREE_OF_A_KIND': lambda x: sorted(x.values) == [1,1,3],
-    'STRAIGHT': lambda x: max(x.values) - min(x.values) in [4, 12],
-    'FULL_HOUSE': lambda x: sorted(x.values) == [2,2],
-    'FOUR_OF_A_KIND': lambda x: sorted(x.values) == [1,4],
-}
-
-
 class HoleCards:
     def __init__(self, deck):
         pass
@@ -220,6 +193,7 @@ class CommunityCards:
 
 def card_from_name(name: str):
     # Construct a card from a name like 'Ts', 5d', Ah', ...
+    # Needs major improvements, should be able to construct a card like this anyway
     rank, suit = name
     return Card(rank=Rank[RankName(rank).name], suit=Suit(suit).name)
 
@@ -258,6 +232,9 @@ class Hand:
         card = self.cards[self._current_index]
         self._current_index += 1
         return card
+    
+    def __repr__(self):
+        return f"<Hand(names={self.names})"
     
     def __str__(self):
         return f"Hand: {self.strength} ({','.join([h.name for h in self.cards])})"
@@ -354,11 +331,12 @@ class Hand:
     
     def classify_hand(self):
         for handstrength, fun in self._rank_funcs.items():
+            
             if fun():
                 self._strength = HandStrengths[handstrength]
                 return
         # If it got to here without returning, handstrength is HIGH_CARD
-        self._strength = HandStrengths.HIGH_CARD.name
+        self._strength = HandStrengths.HIGH_CARD
     
     @staticmethod
     def is_suited_or_sequential(hand):
@@ -368,8 +346,15 @@ class Hand:
             HandStrengths.STRAIGHT,
             HandStrengths.STRAIGHT_FLUSH,
         ]
+    
+    def contains(self, holecards) -> int:
+        return len([c for c in holecards if c in self])
+    
+    def has(self, name):
+        return card_from_name(name) in self
 
     # Hand Strengh Categorisation. Each one has a different check
+    # Alternative idea is to have these all as separate lambdas to loop through
     def is_royalflush(self):
         # Technically indistinct from straight flush but whatever.
         return self.is_straightflush() and max(self) == 14
@@ -404,8 +389,6 @@ class Hand:
         # Use in each evaluation check
         self.types[handstrength.name].append(self.cards)
 
-
-
 class HandSpace:
     # Handspace is the entire set of community cards plus holecards (max 7 in NLHE)
     def __init__(self, holecards: list, community_cards: list):
@@ -413,7 +396,16 @@ class HandSpace:
         self.community_cards = community_cards
         self.space = sorted(self.holecards + self.community_cards, reverse=True) # SORTED HERE
         self.types = {k: [] for k in HandStrengths.items()}
-        self.madehands = {k: [] for k in HandStrengths.items()}
+        self._made_hands = {k: [] for k in HandStrengths.values()}
+        self._find_best_hand()
+    
+    @property
+    def best_hand(self):
+        return self._best_hand
+    
+    @property
+    def made_hands(self):
+        return self._made_hands
 
     def getcombos(self, k=None):
         # Gets all combinations in hand space
@@ -424,68 +416,33 @@ class HandSpace:
         if k > n:
             raise ValueError(f"Tried to get {k} combinations from a space of {n}")
         return list(combinations(self.space, k))
+
+    def _find_all_hands(self):
+        # From the entire hand space, finds all available made hands
+        for i, hand_combination in enumerate( self.getcombos() ):
+            hand = Hand(hand_combination)
+            self._made_hands[hand._strength.value].append( hand )
+        self._made_hands = {k: v for k, v in self._made_hands.items() if v}
     
-    def findbesthand(self):
-        # Loop over 7C5=21 combinations of 5-card hands
-        best_hands = []
-        for i, combo in enumerate(self.getcombos()):
-            # print(i, Hand(combo))
-            hand = Hand(combo)
-
-            # print(f"iteration {i}: {hand} {'-'*70} #")
-            # Rank all available made hands in this 5-card hand
-            # After this, hand.types must have at least high card in it.
-            # Test with.. if not hand.types: raise ValueError or something
-            hand.rank_all_hands() # now see hand.types
-            
-            # print(hand.types)
-            # for k, v in hand.types.items():
-            #     if v:
-            #         print("Adding ", k)
-            #         self.types[k].append(v)
-            # print()
-            
-            '''Problem:
-                We want to pick from the top because this will naturally be the best hand.
-                It therefore makes sense to descend through hand.types and stop when found.
-                However, HIGH_CARD types are more likely, and these are from the bottom.
-                This means we will most frequently be going close to the bottom (lots of search).
-            Solution:
-                Might be better to create a new dict 
-            '''
-            
-            # Loop over all handstrengths in desc order.
-            # If a hand is found, extract all combinations (may be > 1) and end
-            for handstrength in sorted(HandStrengths, reverse=True):
-                if hand.types.get(handstrength.name):
-                    print(f"Found {handstrength.name}\t{hand}")
-                    best_hands.append(hand.cards)
-                    break
-            # print(handstrength, [Hand(h) for h in best_hands])
-        # Fails with handspace of [9,9,9,A,A,K,K]
-        return best_hands
-
-
-
+    def _find_best_hand(self):
+        # From the entire set of available made hands, gets 
+        self._find_all_hands()
+        self._best_hand = max(self.made_hands[max(self.made_hands)])
+        return self._best_hand
 
 
 if __name__ == '__main__':
     deck = Deck()
-    # random.seed(24) # for repeatability
+    random.seed(24) # for repeatability
+    deck.shuffle()
+    holecards = deck.take(2)
+    community_cards = deck.take(5)
 
-    hole = deck.take(names=['9s', 'Jh'])
-    community = deck.take(names=['Jd', '9h', '9c', '2s', '2d'])
-    hs = HandSpace(hole, community) # No sort
+    # holecards = deck.take(names=['9s', 'Jh'])
+    # community_cards = deck.take(names=['Jd', '9h', '9c', '2s', '2d'])
+    
+    
+    hs = HandSpace(holecards, community_cards)
+    print(f"Best hand (out of {len(hs.space)} made hands): {hs.best_hand} (using {hs.best_hand.contains(holecards)} holecard(s))")
 
-    MADEHANDS = {k: [] for k in HandStrengths.values()}
-    for i, combo in enumerate(hs.getcombos()):
-        hand = Hand(combo) # no sorted
-        print(f"{'-'*70} #\niteration {i}")
-        print(hand)
 
-        MADEHANDS[hand._strength.value].append(hand)  
-        print()
-
-    BEST_MADEHAND = MADEHANDS[max({k: v for k, v in MADEHANDS.items() if v})]
-    print(max(BEST_MADEHAND))
-        
