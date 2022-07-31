@@ -195,7 +195,7 @@ def card_from_name(name: str):
     # Construct a card from a name like 'Ts', 5d', Ah', ...
     # Needs major improvements, should be able to construct a card like this anyway
     rank, suit = name
-    return Card(rank=Rank[RankName(rank).name], suit=Suit(suit).name)
+    return Card(rank=Rank[RankName(rank).name].value, suit=Suit(suit).name)
 
 class Hand:
     def __init__(self, cards=None, names: list=None):
@@ -357,7 +357,7 @@ class Hand:
     # Alternative idea is to have these all as separate lambdas to loop through
     def is_royalflush(self):
         # Technically indistinct from straight flush but whatever.
-        return self.is_straightflush() and max(self) == 14
+        return self.is_straightflush() and max(self).rank == 14
 
     def is_straightflush(self):
         return self.is_straight() and self.is_flush()
@@ -372,9 +372,13 @@ class Hand:
         return len(self.suithist) == 1
 
     def is_straight(self):
-        # return max(self.rankings) - min(self.rankings) in [4, 12] # If other checks pass first
-        _rankings = sorted([1 if i==14 else i for i in self.rankings])
-        return _rankings == list(range(min(_rankings), max(_rankings)+1))
+        if self.rankings == [14,5,4,3,2]:
+            return True
+        else:
+            return max(self.rankings) - min(self.rankings) == 4
+        # # return max(self.rankings) - min(self.rankings) in [4, 12] # If other checks pass first
+        # _rankings = sorted([1 if i==14 else i for i in self.rankings])
+        # return _rankings == list(range(min(_rankings), max(_rankings)+1))
 
     def is_threeofakind(self):
         return list(self.rankhist.values()) == [3, 1, 1]
