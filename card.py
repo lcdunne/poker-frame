@@ -376,9 +376,6 @@ class Hand:
             return True
         else:
             return max(self.rankings) - min(self.rankings) == 4
-        # # return max(self.rankings) - min(self.rankings) in [4, 12] # If other checks pass first
-        # _rankings = sorted([1 if i==14 else i for i in self.rankings])
-        # return _rankings == list(range(min(_rankings), max(_rankings)+1))
 
     def is_threeofakind(self):
         return list(self.rankhist.values()) == [3, 1, 1]
