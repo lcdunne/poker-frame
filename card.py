@@ -218,6 +218,7 @@ class CommunityCards:
     def __init__(self, deck):
         pass
 
+
 class Hand:
     def __init__(self, cards):
         self.cards = cards
@@ -257,25 +258,70 @@ class Hand:
     def __getitem__(self, obj):
         return self.cards[obj]
     
+    # Comparisons
     def __eq__(self, other):
-        return self._strength.value == other._strength.value
+        if self._strength.value == other._strength.value:
+            # Check if strength
+            if self.is_suited_or_sequential(self):
+                # Since they have the same value, must both be suited/seq.
+                # Compare highest rankings
+                return max(self.rankings) == max(other.rankings)
+            else:
+                # Must both be high, pair, 2-pair, trips, boat, or quads.
+                # Sort histogram by max count and return the key (e.g. {10:3, 4:2} -> 10)
+                return next(iter(self.rankhist)) == next(iter(other.rankhist))
+        else:
+            return False
     
     def __ne__(self, other):
-        return self._strength.value != other._strength.value
+        if self._strength.value == other._strength.value:
+            if self.is_suited_or_sequential(self):
+                return max(self.rankings) != max(other.rankings)
+            else:
+                return next(iter(self.rankhist)) != next(iter(other.rankhist))
+        else:
+            return True
     
     def __lt__(self, other):
-        return self._strength.value < other._strength.value
+        if self._strength.value == other._strength.value:
+            if self.is_suited_or_sequential(self):
+                return max(self.rankings) < max(other.rankings)
+            else:
+                return next(iter(self.rankhist)) < next(iter(other.rankhist))
+        else:
+            return self._strength.value < other._strength.value
     
     def __le__(self, other):
-        return self._strength.value <= other._strength.value
+        if self._strength.value == other._strength.value:
+            if self.is_suited_or_sequential(self):
+                return max(self.rankings) <= max(other.rankings)
+            else:
+                return next(iter(self.rankhist)) <= next(iter(other.rankhist))
+        else:
+            return self._strength.value <= other._strength.value
     
     def __gt__(self, other):
-        return self._strength.value > other._strength.value
+        if self._strength.value == other._strength.value:
+            if self.is_suited_or_sequential(self):
+                return max(self.rankings) > max(other.rankings)
+            else:
+                return next(iter(self.rankhist)) > next(iter(other.rankhist))
+        else:
+            return self._strength.value > other._strength.value
     
     def __ge__(self, other):
-        return self._strength.value > other._strength.value
+        if self._strength.value == other._strength.value:
+            if self.is_suited_or_sequential(self):
+                return max(self.rankings) >= max(other.rankings)
+            else:
+                return next(iter(self.rankhist)) >= next(iter(other.rankhist))
+        else:
+            return self._strength.value >= other._strength.value
     
-
+    @property
+    def names(self):
+        return [h.name for h in self.cards]
+    
     @property
     def rankings(self):
         return [c.rank for c in self.cards]
@@ -295,31 +341,6 @@ class Hand:
     @property
     def strength(self):
         return self._strength.name
-        
-    
-    # def rank_all_hands(self):
-    #     # Rank all han
-    #     # self.temp = []
-    #     # TODO: Could sort the hands on initialisation, or could sort only when testing.
-    #     # Probably best to sort on the handspace init because then we only do it once.
-    #     for handstrength, fun in self._rank_funcs.items():
-    #         hit = fun()
-    #         if hit:
-    #             print(handstrength, Hand(self.cards))
-    #             break
-    #     #         self.temp.append(self.cards)
-    #     #         self.types[handstrength].append(self.cards)
-    #     #         break
-    #     # if not hit:
-    #     #     # Must be a highcard.
-    #     #     self.add_handtype(HandStrengths.HIGH_CARD)
-    
-    # def classify_hand(self):
-    #     for handstrength, fun in self._rank_funcs.items():
-    #         if fun():
-    #             return self, handstrength
-    #     # If it got to here without returning, handstrength is HIGH_CARD
-    #     return self, HandStrengths.HIGH_CARD.name
     
     def classify_hand(self):
         for handstrength, fun in self._rank_funcs.items():
@@ -328,7 +349,15 @@ class Hand:
                 return
         # If it got to here without returning, handstrength is HIGH_CARD
         self._strength = HandStrengths.HIGH_CARD.name
-
+    
+    @staticmethod
+    def is_suited_or_sequential(hand):
+        # Convenience function to check if the hand is either straight- or flush-like
+        return hand._strength in [
+            HandStrengths.FLUSH,
+            HandStrengths.STRAIGHT,
+            HandStrengths.STRAIGHT_FLUSH,
+        ]
 
     # Hand Strengh Categorisation. Each one has a different check
     def is_royalflush(self):
@@ -352,13 +381,10 @@ class Hand:
         _rankings = sorted([1 if i==14 else i for i in self.rankings])
         return _rankings == list(range(min(_rankings), max(_rankings)+1))
 
-
     def is_threeofakind(self):
         return list(self.rankhist.values()) == [3, 1, 1]
     
     def is_twopair(self):
-        # This one is tricky. Need the HIGHER pair of the two...
-        # Could potentially have __gt__ & __lt__ funcs for this.....
         return list(self.rankhist.values()) == [2, 2, 1]
     
     def is_pair(self):
@@ -436,37 +462,20 @@ class HandSpace:
 if __name__ == '__main__':
     deck = Deck()
     # random.seed(24) # for repeatability
-    
-    # TODO: distinguish [AAA22 from 222AA]
 
     hole = deck.take(names=['9s', 'Jh'])
     community = deck.take(names=['Jd', '9h', '9c', '2s', '2d'])
     hs = HandSpace(hole, community) # No sort
-    # best = hs.findbesthand()
-    # best_hand = Hand(max(best))
-    # print(best_hand)
-    # # results = []
-    
-    # Given a handspace...
-    # Loop through all combinations in the handspace
-    # Terminate on the best hand
-    # Append it to the dict of available made hands
-    MADEHANDS = {k: [] for k in HandStrengths.items()}
+
+    MADEHANDS = {k: [] for k in HandStrengths.values()}
     for i, combo in enumerate(hs.getcombos()):
         hand = Hand(combo) # no sorted
         print(f"{'-'*70} #\niteration {i}")
         print(hand)
-        # hand.rank_all_hands()
-        # _, strength = hand.classify_hand()
-        # print(strength)
-        # MADEHANDS[strength].append(hand)
-        
-        
-        
-        # print()
-        # if strength == 'STRAIGHT':
-        #     break
-        # if hand[0].rank < max(hand).rank:
-        #     break
-    
+
+        MADEHANDS[hand._strength.value].append(hand)  
+        print()
+
+    BEST_MADEHAND = MADEHANDS[max({k: v for k, v in MADEHANDS.items() if v})]
+    print(max(BEST_MADEHAND))
         
