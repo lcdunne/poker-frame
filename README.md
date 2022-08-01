@@ -9,6 +9,7 @@ Simulation ran for 10m hands appears to match expected probabilities of each han
 
 - Create main unittests
 - Break up into modules
+- Major improvements
 
 ## DOING:
 
