@@ -311,7 +311,7 @@ class Hand:
     
     @property
     def rankings(self):
-        return [c.rank for c in self.cards]
+        return sorted([c.rank for c in self.cards], reverse=True)
 
     @property
     def suits(self):
@@ -375,7 +375,7 @@ class Hand:
         if self.rankings == [14,5,4,3,2]:
             return True
         else:
-            return max(self.rankings) - min(self.rankings) == 4
+            return self.rankings == sorted(range(min(self.rankings), max(self.rankings)+1), reverse=True)
 
     def is_threeofakind(self):
         return list(self.rankhist.values()) == [3, 1, 1]
@@ -416,7 +416,7 @@ class HandSpace:
         n = len(self.holecards) + len(self.community_cards)
         if k > n:
             raise ValueError(f"Tried to get {k} combinations from a space of {n}")
-        return list(combinations(self.space, k))
+        return combinations(self.space, k)
 
     def _find_all_hands(self):
         # From the entire hand space, finds all available made hands

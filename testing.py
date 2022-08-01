@@ -26,3 +26,8 @@ hands = [rf, sf, quads, fh, flush, st, trps, tpr, pr, hc]
 for hand, hstrn in zip(hands, HandStrengths.values()[::-1]):
     print(hand, hstrn)
     assert hand.strength == HandStrengths(hstrn).name, f"Got {hand.strength}, expected {HandStrengths(hstrn).name}"
+
+# Check hand comparisons between ranks
+assert rf > sf > quads > fh > flush > st > trps > tpr > pr > hc
+
+# Check hand comparisons within ranks
