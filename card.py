@@ -21,8 +21,6 @@ class Suit(ExtendedEnum):
     SPADES = 's'
 
 class Rank(IntEnum, ExtendedEnum):
-    # Access with Rank.TWO.name, Rank.TWO.value
-    # This is used because Card class is not really user-facing
     TWO = 2
     THREE = 3
     FOUR = 4
@@ -53,9 +51,6 @@ class RankName(ExtendedEnum):
     ACE = 'A'
 
 class HandStrengths(IntEnum, ExtendedEnum):
-    # Ended up being used like a dictionary with many hoops just to get keys & values...
-    # Probably get rid and replace with a dict.
-    # Could also use IntEnum........................
     HIGH_CARD = 0
     PAIR = 1
     TWO_PAIR = 2
@@ -107,7 +102,6 @@ class Deck:
             self._current_index = 0
             raise StopIteration
 
-        # card = self.cards[self._current_index]
         self._current_index += 1
         # return card
         return self.cards[self._current_index-1]
@@ -183,14 +177,6 @@ class Deck:
         
         return [self.cards.pop() for _ in range(n)]
 
-class HoleCards:
-    def __init__(self, deck):
-        pass
-
-class CommunityCards:
-    def __init__(self, deck):
-        pass
-
 def card_from_name(name: str):
     # Construct a card from a name like 'Ts', 5d', Ah', ...
     # Needs major improvements, should be able to construct a card like this anyway
@@ -245,30 +231,7 @@ class Hand:
     def __getitem__(self, obj):
         return self.cards[obj]
     
-    # Comparisons
-    def __eq__(self, other):
-        if self._strength.value == other._strength.value:
-            # Check if strength
-            if self.is_suited_or_sequential(self):
-                # Since they have the same value, must both be suited/seq.
-                # Compare highest rankings
-                return max(self.rankings) == max(other.rankings)
-            else:
-                # Must both be high, pair, 2-pair, trips, boat, or quads.
-                # Sort histogram by max count and return the key (e.g. {10:3, 4:2} -> 10)
-                return next(iter(self.rankhist)) == next(iter(other.rankhist))
-        else:
-            return False
-    
-    def __ne__(self, other):
-        if self._strength.value == other._strength.value:
-            if self.is_suited_or_sequential(self):
-                return max(self.rankings) != max(other.rankings)
-            else:
-                return next(iter(self.rankhist)) != next(iter(other.rankhist))
-        else:
-            return True
-    
+    # Comparisons    
     def __lt__(self, other):
         if self._strength.value == other._strength.value:
             if self.is_suited_or_sequential(self):
@@ -286,15 +249,29 @@ class Hand:
                 return next(iter(self.rankhist)) <= next(iter(other.rankhist))
         else:
             return self._strength.value <= other._strength.value
-    
-    def __gt__(self, other):
+
+    def __eq__(self, other):
+        if self._strength.value == other._strength.value:
+            # Check if strength
+            if self.is_suited_or_sequential(self):
+                # Since they have the same value, must both be suited/seq.
+                # Compare highest rankings
+                return max(self.rankings) == max(other.rankings)
+            else:
+                # Must both be high, pair, 2-pair, trips, boat, or quads.
+                # Sort histogram by max count and return the key (e.g. {10:3, 4:2} -> 10)
+                return next(iter(self.rankhist)) == next(iter(other.rankhist))
+        else:
+            return False
+
+    def __ne__(self, other):
         if self._strength.value == other._strength.value:
             if self.is_suited_or_sequential(self):
-                return max(self.rankings) > max(other.rankings)
+                return max(self.rankings) != max(other.rankings)
             else:
-                return next(iter(self.rankhist)) > next(iter(other.rankhist))
+                return next(iter(self.rankhist)) != next(iter(other.rankhist))
         else:
-            return self._strength.value > other._strength.value
+            return True
     
     def __ge__(self, other):
         if self._strength.value == other._strength.value:
@@ -304,6 +281,15 @@ class Hand:
                 return next(iter(self.rankhist)) >= next(iter(other.rankhist))
         else:
             return self._strength.value >= other._strength.value
+    
+    def __gt__(self, other):
+        if self._strength.value == other._strength.value:
+            if self.is_suited_or_sequential(self):
+                return max(self.rankings) > max(other.rankings)
+            else:
+                return next(iter(self.rankhist)) > next(iter(other.rankhist))
+        else:
+            return self._strength.value > other._strength.value
     
     @property
     def names(self):
