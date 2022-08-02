@@ -70,7 +70,10 @@ Simulation results table:
 
 - Create main unittests
 - Break up into modules
-- Major improvements
+- Major improvements:
+  - Extract all hand evaluation methods and create new HandEvaluator class (?) to handle this (or just a module of functions)
+  - Make sure HIGH_CARD is not considered a made hand
+  - 
 
 ## DOING:
 

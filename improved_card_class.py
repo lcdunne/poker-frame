@@ -1,33 +1,30 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Aug  1 18:54:17 2022
+from enum import Enum
 
-@author: L
-"""
-
-import random
-from collections import Counter
-from itertools import combinations
-from enum import Enum, IntEnum
-from dataclasses import dataclass, field
-
-
-class ExtendedEnum(Enum):
+class _ExtendedEnum(Enum):
     @classmethod
     def items(cls):
-        return list(map(lambda c: c.name, cls))
+        return [e.name for e in cls]
     
     @classmethod
     def values(cls):
-        return list(map(lambda c: c.value, cls))
+        return [e.value for e in cls]
 
-class Suit(ExtendedEnum):
-    CLUBS = 'c'
-    DIAMONDS = 'd'
-    HEARTS = 'h'
-    SPADES = 's'
+class RankName(_ExtendedEnum):
+    TWO = '2'
+    THREE = '3'
+    FOUR = '4'
+    FIVE = '5'
+    SIX = '6'
+    SEVEN ='7'
+    EIGHT = '8'
+    NINE = '9'
+    TEN = 'T'
+    JACK = 'J'
+    QUEEN = 'Q'
+    KING = 'K'
+    ACE = 'A'
 
-class Rank(IntEnum, ExtendedEnum):
+class Rank(_ExtendedEnum):
     TWO = 2
     THREE = 3
     FOUR = 4
@@ -41,70 +38,74 @@ class Rank(IntEnum, ExtendedEnum):
     QUEEN = 12
     KING = 13
     ACE = 14
+    
+    @classmethod
+    def get(cls, label):
+        # For example, Rank.get('T') -> 10 ... Rank.get('K') -> 13
+        return Rank[RankName(label).name]
+    
+    @property
+    def label(self):
+        # For example, Rank.ACE.label -> 'A'
+        return RankName[self.name].value
 
-class RankName(ExtendedEnum):
-    TWO = '2'
-    THREE = '3'
-    FOUR = '4'
-    FIVE = '5'
-    SIX = '6'
-    SEVEN = '7'
-    EIGHT = '8'
-    NINE = '9'
-    TEN = 'T'
-    JACK = 'J'
-    QUEEN = 'Q'
-    KING = 'K'
-    ACE = 'A'
-
-class HandStrengths(IntEnum, ExtendedEnum):
-    HIGH_CARD = 0
-    PAIR = 1
-    TWO_PAIR = 2
-    THREE_OF_A_KIND = 3
-    STRAIGHT = 4
-    FLUSH = 5
-    FULL_HOUSE = 6
-    FOUR_OF_A_KIND = 7
-    STRAIGHT_FLUSH = 8
-    ROYAL_FLUSH = 9
+class Suit(Enum):
+    CLUBS = 'c'
+    DIAMONDS = 'd'
+    HEARTS = 'h'
+    SPADES = 's'
 
 class Card:
-    def __init__(self, label=None, rank: int=None, suit=None):
-        # If rank & suit are provided they must be enums
+    def __init__(self, label: str = None, rank: Rank = None, suit: Suit = None):
+        # Passing in label means that arguments for rank and suit will be ignored.
+        # e.g.: Card('Jd', rank=4, suit='CLUBS') -> Card('Jd')
         if label is not None:
-            self._label = label
-            # ensure correct label here (check all enum values)
-            self._rank = Rank[RankName(self._label[0]).name]
-            self._suit = Suit(self._label[1])
+            # Label takes precedence e.g. Card('Td')
+            self._rank, self._suit = self.parse_label(label)
+            self._label = label.capitalize() # By this point label will be valid if parse_label worked
+        elif all([rank, suit]):
+            # Construct the label from rank and suit directly
+            self._label = Rank(rank).label + Suit[suit.upper()].value
+            self._rank, self._suit = self.parse_label(self.label)
         else:
-            # Ensure both rank & suit are given
-            if not all([rank, suit]):
-                raise ValueError("If label is not provided, both rank and suit must be provided (received None for both).")
-            self._rank = Rank(rank)
-            self._suit = Suit[suit]
-            self._label = RankName[self._rank.name].value + self._suit.value
+            raise ValueError("Expected either `label`, or both of `rank` and `suit`.")
+
+    @classmethod
+    def parse_label(cls, label):
+        # Parses a label into a valid hand rank and suit
+        # Get the rank & suit from the label
+        return Rank.get(label[0].upper()).value, Suit(label[1].lower()).name
     
     def __repr__(self):
         return f"<Card('{self.label}')>"
     
     def __str__(self):
-        return f"{self.rank.name.capitalize()} of {self.suit.name.capitalize()}"
+        return f"{Rank(self.rank).name.capitalize()} of {self.suit.capitalize()}"
     
     def __lt__(self, other):
-        return self.rank < other.rank
+        if isinstance(other, Card):
+            return self.rank < other.rank
+        return self.rank < other
     
     def __le__(self, other):
-        return self.rank <= other.rank
+        if isinstance(other, Card):
+            self.rank <= other.rank
+        return self.rank <= other
     
     def __eq__(self, other):
-        return self.rank == other.rank
+        if isinstance(other, Card):
+            return self.rank == other.rank
+        return self.rank == other
     
     def __ge__(self, other):
-        return self.rank >= other.rank
+        if isinstance(other, Card):
+            return self.rank >= other.rank
+        return self.rank >= other
     
     def __gt__(self, other):
-        return self.rank > other.rank
+        if isinstance(other, Card):
+            return self.rank > other.rank
+        return self.rank > other
     
     @property
     def rank(self):
@@ -117,4 +118,9 @@ class Card:
     @property
     def label(self):
         return self._label
-    
+
+td = Card('td')
+qh = Card(rank=12, suit=Suit.HEARTS.name)
+ad = Card('Ad')
+
+ad > qh > td > 9
