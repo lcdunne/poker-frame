@@ -27,6 +27,12 @@ class Card:
     def __str__(self):
         return f"{Rank(self.rank).name.capitalize()} of {self.suit.capitalize()}"
     
+    # Note on comparisons ----------- #
+    # Comparisons are made based on the ranking because this is important for poker.
+    # This has the drawback that searching a deck cannot be carried out with 
+    # the `in` operator because there will be mutliple matches.
+    # This might be slower, but rank comparisons are more of a requirement than
+    # dealing of specific cards (for now).
     def __lt__(self, other):
         if isinstance(other, Card):
             return self.rank < other.rank

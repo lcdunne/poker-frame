@@ -78,6 +78,7 @@ Simulation results table:
 ## DOING:
 
 - Write tests
+- Decide between `.label` or `.name` for refs like `'Ts', 'Jh', 'Qc', ...`. The problem with name is that it interfered with enums.
 
 ## DONE:
 
