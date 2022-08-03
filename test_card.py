@@ -1,6 +1,5 @@
 import unittest
-from itertools import product
-from enums import Rank, Suit
+from enums import Rank, Suit, get_ranks_and_suits, get_all_handlabels
 from card import Card
 
 class TestCard(unittest.TestCase):
@@ -11,24 +10,17 @@ class TestCard(unittest.TestCase):
     def tearDown(self):
         pass
     
-    def get_ranks_and_suits(self):
-        # Returns list of [(2, 'CLUBS'), ... , (14, 'SPADES')]
-        return product(Rank.values(), Suit.items())
-    
-    def get_all_handlabels(self):
-        # Returns list of ['2c', ... , 'As']
-        return [Rank(c[0]).label+Suit[c[1]].value for c in self.get_ranks_and_suits()]
     
     def test_card_labels_by_ranksuit(self):
         # Loop over all ranks and suits and test that labels are as expected.
-        for rank, suit in self.get_ranks_and_suits():
+        for rank, suit in get_ranks_and_suits():
             card = Card( rank=rank, suit=suit )
             q = Rank(rank).label + Suit[suit].value
             self.assertEqual( card.label, q )
     
     def test_card_label(self):
         # Loop over all combinations of rank and suit
-        for rank, suit in self.get_ranks_and_suits():
+        for rank, suit in get_ranks_and_suits():
             label_ = Rank(rank).label + Suit[suit].value
             for label in [
                     label_, # Normal, like Qd
@@ -47,8 +39,8 @@ class TestCard(unittest.TestCase):
     
     def test_card_label_precedence(self):
         # Test that providing a card label takes precedence over rank and suit args.
-        handlabels = self.get_all_handlabels()[::-1] # reversed for a different order.
-        ranks_suits = self.get_ranks_and_suits()
+        handlabels = get_all_handlabels()[::-1] # reversed for a different order.
+        ranks_suits = get_ranks_and_suits()
         
         for label, ranksuit in zip(handlabels, ranks_suits):
             rank, suit = ranksuit[0], ranksuit[1]

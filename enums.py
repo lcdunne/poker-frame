@@ -1,4 +1,13 @@
 from enum import Enum
+from itertools import product
+
+def get_ranks_and_suits():
+    # Returns list of [(2, 'CLUBS'), ... , (14, 'SPADES')]
+    return product(Rank.values(), Suit.items())
+
+def get_all_handlabels():
+    # Returns list of ['2c', ... , 'As']
+    return [Rank(c[0]).label+Suit[c[1]].value for c in get_ranks_and_suits()]
 
 class _ExtendedEnum(Enum):
     @classmethod

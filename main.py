@@ -432,4 +432,7 @@ if __name__ == '__main__':
     hs = HandSpace(holecards, community_cards)
     print(f"Best hand (out of {len(hs.space)} made hands): {hs.best_hand} (using {hs.best_hand.contains(holecards)} holecard(s))")
 
-
+    #%%
+    from itertools import product
+    deck = Deck()
+    refs = [''.join(hand) for hand in list(product(RankName.values(), Suit.values()))]
