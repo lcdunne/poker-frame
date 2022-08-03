@@ -13,7 +13,6 @@ class Deck:
         `.has` - check if the deck contains a specific card.
         `.take` - take cards from the deck.
     
-    
     """
     def __init__(self):
         self.cards = [

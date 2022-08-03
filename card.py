@@ -1,15 +1,56 @@
 from enums import Rank, Suit
 
 class Card:
-    def __init__(self, label: str = None, rank: Rank = None, suit: Suit = None):
-        # Passing in label means that arguments for rank and suit will be ignored.
-        # e.g.: Card('Jd', rank=4, suit='CLUBS') -> Card('Jd')
+    """A playing card.
+    
+    Members of the `Card` class can be compared (based on their rank only).
+    
+    Notes
+    ----
+    Either a single card label, or both rank and suit, must be provided for 
+    construction.
+    
+    If label is provided and any of rank or suit are also provided, then label 
+    will take precedence: Calling `Card('2s', rank=10, suit='DIAMONDS')` will 
+    create the two of spades, not the ten of diamonds.
+    
+    Comparisons are made based on the integer ranking because this is important 
+    for poker. This has the drawback that searching a deck (see `Deck._search`, 
+    for example) cannot be carried out with the `in` membership operator 
+    because there will be mutliple matches. This might be slower, but rank 
+    comparisons are more of a requirement than dealing of specific cards (for 
+    now).
+
+    Parameters
+    ----------
+    label : str, optional
+        A label, like `As`, or `2c` from which to create the card. The default 
+        is None.
+    rank : int, optional
+        An integer value denoting the rank of the playing card from which to 
+        create the card. This value must correspond to one of the rank values 
+        defined  in `enums.Rank`, i.e. in the range (2, 14) inclusive. If 
+        `rank` is used, `suit` must also be passed in. The default is None.
+    suit : str, optional
+        A string denoting the suit of the playing card from which to create the 
+        card. This value must correspond to one of the suit values defined in 
+        `enums.Suit`, i.e. one of `'SPADES'`, `'CLUBS'`, `'DIAMONDS'`, 
+        `'HEARTS'`. If `suit` is used, `rank` must also be passed in. The 
+        default is None.
+
+    Raises
+    ------
+    ValueError
+        If if label is None and only one or none of `rank` and `suit` are 
+        passed.
+
+    """
+    def __init__(self, label: str = None, rank: int = None, suit: str = None):
         if label is not None:
-            # Label takes precedence e.g. Card('Td')
             self._rank, self._suit = self.parse_label(label)
-            self._label = label.capitalize() # By this point label will be valid if parse_label worked
+            # By this point label will be valid if parse_label worked
+            self._label = label.capitalize()
         elif all([rank, suit]):
-            # Construct the label from rank and suit directly
             self._label = Rank(rank).label + Suit[suit.upper()].value
             self._rank, self._suit = self.parse_label(self.label)
         else:
@@ -17,8 +58,21 @@ class Card:
 
     @classmethod
     def parse_label(cls, label):
-        # Parses a label into a valid hand rank and suit
-        # Get the rank & suit from the label
+        """Parse a label into a formally defined rank and suit.
+
+        Parameters
+        ----------
+        label : str
+            A card label, like 'As', to be parsed into a rank and suit.
+
+        Returns
+        -------
+        int
+            A rank value as defined in `enums.Rank.
+        str
+            A suit value as defined in `enums.Suit`.
+
+        """
         return Rank.get(label[0].upper()).value, Suit(label[1].lower()).name
     
     def __repr__(self):
@@ -27,12 +81,6 @@ class Card:
     def __str__(self):
         return f"{Rank(self.rank).name.capitalize()} of {self.suit.capitalize()}"
     
-    # Note on comparisons ----------- #
-    # Comparisons are made based on the ranking because this is important for poker.
-    # This has the drawback that searching a deck cannot be carried out with 
-    # the `in` operator because there will be mutliple matches.
-    # This might be slower, but rank comparisons are more of a requirement than
-    # dealing of specific cards (for now).
     def __lt__(self, other):
         if isinstance(other, Card):
             return self.rank < other.rank
@@ -60,14 +108,17 @@ class Card:
     
     @property
     def rank(self):
+        """int: The integer rank, from `enums.Rank`, for this card."""
         return self._rank
     
     @property
     def suit(self):
+        """str: The suit, from `enums.Suit`, for this card."""
         return self._suit
     
     @property
     def label(self):
+        """str: The label abbreviation for this card."""
         return self._label
 
 if __name__ == '__main__':
