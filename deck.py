@@ -4,8 +4,21 @@ from enums import Rank, Suit
 from card import Card
 
 class Deck:
+    """A deck of playing cards.
+    
+    Each element is defined by the `Card` class. The deck is an iterable. Basic 
+    methods are:
+        `.shuffle` - shuffle the deck.
+        `.fan` - view a small selection of the deck.
+        `.has` - check if the deck contains a specific card.
+        `.take` - take cards from the deck.
+    
+    
+    """
     def __init__(self):
-        self.cards = [Card(rank=r, suit=s) for r,s in product(Rank.values(), Suit.items())]
+        self.cards = [
+            Card(rank=r, suit=s) for r,s in product(Rank.values(), Suit.items())
+        ]
         self._current_index = 0
     
     def __iter__(self):
@@ -35,19 +48,51 @@ class Deck:
         return list(filter(lambda_, self))
     
     def shuffle(self):
+        """Shuffle the deck in place.
+
+        Returns
+        -------
+        None
+
+        """
         random.shuffle(self.cards)
     
     def fan(self, n=5):
-        # Like pandas.dataframe.head, only for playing cards
-        return self[:n]
+        """See the first `n` cards
+
+        Parameters
+        ----------
+        n : int, optional
+            The number of cards to show. The default is 5.
+
+        Returns
+        -------
+        list
+            A list of `n` `Card` objects.
+
+        """
+        return self[:n] if n > 0 else self[n:]
     
-    def has(self, name):
-        return name in [card.label for card in self]
+    def has(self, label):
+        """Check to see if a card label, is contained in the deck.
+
+        Parameters
+        ----------
+        label : str
+            A label like `Jd`, 'As', etc.
+
+        Returns
+        -------
+        bool
+            Whether the card denoted by the label exists in the deck or not.
+
+        """
+        return label in [card.label for card in self]
     
-    def take(self, n=None, names=None, lambda_=None):
+    def take(self, n=None, labels=None, lambda_=None):
         """Take cards from deck.
         
-        Take any number of cards by `n`, based on their `names`, or based on a 
+        Take any number of cards by `n`, based on their `labels`, or based on a 
         lambda function. Note that this pops the cards from the deck, which 
         occurs in place - make sure to store the result.
 
@@ -56,8 +101,8 @@ class Deck:
         n : int, optional
             Number of cards to take from the top of the deck. The default is 
             None.
-        names : str or list, optional
-            A list of card names, like ['Ts', 'Qc'] to take from the deck. The 
+        labels : str or list, optional
+            A list of card labels, like ['Ts', 'Qc'] to take from the deck. The 
             default is None.
         lambda_ : callable, optional
             A custom lambda function for the cards in the deck. The default is 
@@ -74,22 +119,25 @@ class Deck:
             Cards that were taken from the deck.
 
         """
-        if names is not None:
-            if isinstance(names, str):
-                names = [names]
-            lambda_ = lambda x: x.label in names
+        if labels is not None:
+            if isinstance(labels, str):
+                labels = [labels]
+            lambda_ = lambda x: x.label in labels
         
         if lambda_ is not None:
             # Create a search list as a reference to extract from cards.
             searched = [i.label for i in self._search(lambda_) if i is not None]
+            
             # Store cards to take
             taken = [c for c in self if c.label in searched]
+            
             # Update original cards list  to reflect removal
             self.cards = [c for c in self if c.label not in searched]
+            
             return taken
         
         if n is None:
-            raise ValueError("Must specify either n, names, or lambda function.")
+            raise ValueError("Must specify either n, labels, or lambda function.")
         return [self.cards.pop() for _ in range(n)]
 
 if __name__ == '__main__':
