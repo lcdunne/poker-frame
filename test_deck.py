@@ -32,24 +32,24 @@ class TestDeck(unittest.TestCase):
         self.assertLess(len(deck), lendeck_start)
         self.assertEqual(len(deck), lendeck_start-n_to_take)
     
-    def test_take_all_names(self):
+    def test_take_all_labels(self):
         deck = Deck()
         all_handlabels = get_all_handlabels()
         
         self.assertEqual(len(deck), len(all_handlabels))
         
         # Take all cards from deck
-        taken = deck.take(names=all_handlabels)
+        taken = deck.take(labels=all_handlabels)
         self.assertEqual(len(deck), 0)
         self.assertEqual(len(taken), len(all_handlabels))
         self.assertTrue( all([t.label in all_handlabels for t in taken]) )
     
-    def test_take_specific_names(self):
+    def test_take_specific_labels(self):
         deck = Deck()
         handlabels = ['Ks', 'Qs', 'Js', 'Ts', '9s']
         
-        # Take the names
-        taken = deck.take(names=handlabels)
+        # Take the labels
+        taken = deck.take(labels=handlabels)
         for handlabel in handlabels:
             # Make sure they the deck no longer has them
             self.assertFalse( deck.has(handlabel) )
