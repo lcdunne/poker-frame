@@ -31,9 +31,10 @@ class Hand:
             raise ValueError("Expected either `label`, or both of `rank` and `suit`.")
 
         self.cards = cards
+        self._strength = None
         self._current_index = 0
         self._rank_funcs = {
-            # HandStrength.ROYAL_FLUSH.name: self.is_royalflush,
+            # HandStrength.ROYAL_FLUSH.name: self.is_royalflush, # not important
             HandStrength.STRAIGHT_FLUSH.name: self.is_straightflush,
             HandStrength.FOUR_OF_A_KIND.name: self.is_four_of_a_kind,
             HandStrength.FULL_HOUSE.name: self.is_full_house,
@@ -43,7 +44,7 @@ class Hand:
             HandStrength.TWO_PAIR.name: self.is_twopair,
             HandStrength.PAIR.name: self.is_pair,
         }
-        # self.classify_hand()
+        self.classify_hand()
     
     def __iter__(self):
         return self
@@ -133,6 +134,32 @@ class Hand:
 
         """
         return dict(Counter( self.suits ).most_common())
+    
+    @property
+    def strength(self):
+        """The strength category name of the hand (see `enums.Handstrength`)
+
+        Returns
+        -------
+        str
+            Hand strength name.
+
+        """
+        return self._strength.name
+    
+    def classify_hand(self):
+        """Classify strength of hand.
+
+        Returns
+        -------
+        None.
+
+        """
+        for handstrength, fun in self._rank_funcs.items():
+            if fun():
+                self._strength = HandStrength[handstrength]
+                return
+        self._strength = HandStrength.HIGH_CARD
     
     def has(self, label):
         """Check if the hand contains a card.
