@@ -84,6 +84,7 @@ class TestDeck(unittest.TestCase):
             lambda x: x.rank == 14, # all aces
             lambda x: x.rank > 10, # all court cards
             lambda x: x.label in ['As', 'Ts', '4c', 'Jh'], # some random selection
+            lambda x: x.label in ['i am not in the deck', 'haha', 'joker']
             
         ]
         

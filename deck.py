@@ -80,17 +80,13 @@ class Deck:
             lambda_ = lambda x: x.label in names
         
         if lambda_ is not None:
-            # Could make this more readable.
-            # TODO: fix bug with this
+            # Create a search list as a reference to extract from cards.
             searched = [i.label for i in self._search(lambda_) if i is not None]
-            # _tempdeck = self
-            take, keep = [], []
-            for card in self.cards:
-                take.append(card) if card.label in searched else keep.append(card)
-            self.cards = keep
-            return take
-                
-        # return [self.cards.pop(i) for i, c in enumerate(self) if c.label in searched]
+            # Store cards to take
+            taken = [c for c in self if c.label in searched]
+            # Update original cards list  to reflect removal
+            self.cards = [c for c in self if c.label not in searched]
+            return taken
         
         if n is None:
             raise ValueError("Must specify either n, names, or lambda function.")
