@@ -84,6 +84,92 @@ class Hand:
     def __repr__(self):
         return f"<Hand({self.labels})"
     
+    # Comparisons ----------- #
+    # Note on comparisons...
+    # Absolute rank is the first comparison to make.
+    # But if they are both equal, need a way to distinguish the best from hand.
+    # Given that they are sorted by this point, it should just be a case of comparing the first card.
+    # We could make a handmask attribute..
+    # We could compare rankhist
+    def __lt__(self, other):
+        if self._strength.value == other._strength.value:
+            for l1, l2 in zip(self.components, other.components):
+                if l1[0] > l2[0]:
+                    return False
+                elif l1[0] == l2[0]:
+                    continue
+                else:
+                    return True
+            return False
+        else:
+            return self._strength.value < other._strength.value
+    
+    def __le__(self, other):
+        if self._strength.value == other._strength.value:
+            for l1, l2 in zip(self.components, other.components):
+                if l1[0] > l2[0]:
+                    return False
+                elif l1[0] == l2[0]:
+                    continue
+                else:
+                    return True
+            return True
+        else:
+            return self._strength.value <= other._strength.value
+
+    def __eq__(self, other):
+        if self._strength.value == other._strength.value:
+            for l1, l2 in zip(self.components, other.components):
+                if l1[0] > l2[0]:
+                    return False
+                elif l1[0] == l2[0]:
+                    continue
+                else:
+                    return False
+            return True
+        else:
+            return False
+
+    def __ne__(self, other):
+        if self._strength.value == other._strength.value:
+            for l1, l2 in zip(self.components, other.components):
+                if l1[0] > l2[0]:
+                    return True
+                elif l1[0] == l2[0]:
+                    continue
+                else:
+                    return True
+            return False
+        else:
+            return True
+    
+    def __ge__(self, other):
+        if self._strength.value == other._strength.value:
+            for l1, l2 in zip(self.components, other.components):
+                if l1[0] > l2[0]:
+                    return True
+                elif l1[0] == l2[0]:
+                    continue
+                else:
+                    return False
+            return True
+        else:
+            return self._strength.value >= other._strength.value
+    
+    def __gt__(self, other):
+        if self._strength.value == other._strength.value:
+            # We need to split the hand into its components to identify which is greater.
+            for l1, l2 in zip(self.components, other.components):
+                if l1[0] > l2[0]:
+                    return True
+                elif l1[0] == l2[0]:
+                    continue
+                else:
+                    return False
+            return False
+        else:
+            return self._strength.value > other._strength.value
+    
     @property
     def labels(self):
         """Labels for each card in the hand.
@@ -184,6 +270,62 @@ class Hand:
 
         """
         return [c for c in self if c.rank == rank]
+    
+    def get_by_count(self, count):
+        """Get a card by its count in the hand histogram.
+        
+        For example, if the hand is three of a kind, then getting all cards 
+        with a count of 1 will give the kicker.
+
+        Parameters
+        ----------
+        count : int
+            The integer count for the target return card.
+
+        Returns
+        -------
+        list
+            A list of cards with rank equal to `rank`. Returns empty list if 
+            there were no matches.
+
+        """
+        result = []
+        for rank in [k for k, v in self.rankhist.items() if v == count]:
+            result.extend( self.get_by_rank(rank) )
+        return result
+    
+    def _is_suited_or_sequential(self):
+        # Convenience function to check if the hand is either straight- or flush-like
+        return self._strength in [
+            HandStrength.FLUSH,
+            HandStrength.STRAIGHT,
+            HandStrength.STRAIGHT_FLUSH,
+        ]
+    
+    def kickersplit(self):
+        self.kicker = self.get_by_count(1)
+        if self._is_suited_or_sequential():
+            # No kicker. Maybe return (self.cards, [])
+            return
+        mains = [c for c in self.cards if self.rankhist[c.rank] > 1]
+        kicks = [c for c in self.cards if self.rankhist[c.rank] == 1]
+        return mains, kicks
+    
+    @property
+    def components(self):
+        # Split the hand into component parts based on its ranking histogram.
+        # Hand(['9c', '9h', '2d', '2h', '6s'] becomes [[<('9c')>, <('9h')>], [<('2d')>, <('2h')>], [<('6s')>]]
+        # result = []
+        # for k in self.rankhist:
+        #     result.append( self.get_by_rank(k) )
+        # return result
+        return [self.get_by_rank(k) for k in self.rankhist]
+        
+        
+    
+    
+    def mask(self):
+        pass
     
     def sort_by_strength(self):
         """Sort the hand based on its strength and according to the histogram.
@@ -377,9 +519,55 @@ sf = Hand(['Jh', '9h', 'Qh', '8h', 'Th'])
 quads = Hand(['Qc','6d', '6c',  '6h', '6s'])
 fh = Hand(['2h', '9s', '2c', '2d', '9h']) # doesn't work for full house
 flush = Hand(['6d', '3d', 'Ad', 'Jd', '9d'])
-straight = Hand(('7d', '9d','5d','8d','6d'))
+straight = Hand(['7d', '9d', '5h', '8d', '6c'])
 trips = Hand(['Qc', '6d', 'Ah', '6h', '6s'])
-twopair = Hand(['2d', '6s', '9c', '9h', '2h'])
-twopair = Hand(['4s', '5c', '4h', '5d', 'Kh'])
+tp1 = Hand(['2d', '6s', '9c', '9h', '2h'])
+tp2 = Hand(['4s', '8c', '4h', '8d', 'Kh'])
+trips1 = Hand( ['7c', '7d', '7h', 'Kc', 'Ts'] )
 pair = Hand(['3h', '3c', '6s', 'Td', 'Jh'])
 hc = Hand(['3h', '2c', '6s', 'Td', 'Jh'])
+
+# # if it isn't straight or flush, then its components are:
+# #  each unique count > 1 and 
+# for A, B in zip(tp1.rankhist, tp2.rankhist):
+#     # zip self.rankhist, other.rankhist
+#     print(A, B)
+
+hand = tp1
+other = tp2
+
+A = list(Counter(hand.rankhist).elements())
+B = list(Counter(other.rankhist).elements())
+
+# for i, j in zip(A, B):
+#     if i > j:
+#         return True
+#     else:
+#         return False
+
+# Because the hands by this point are arranged semantically, then we can simply compare the first element:
+# [c1 > c2 for c1, c2 in zip(hand, other)][0].. or just hand[0] > other[0]...
+
+
+# for h1c, h2c in zip(hand.components, other.components):
+#     print(h1c, h2c)
+#     if h1c[0] > h2c[0]:
+#         print("\tH1 > H2")
+#     elif h1c[0] == h2c[0]:
+#         print("The same")
+
+L1 = [ [7, 7], [5, 6], [4] ]
+L2 = [ [7, 7], [5, 5], [4] ]
+
+def complist(L1, L2):
+    # Is L1 equal to L2?
+    for l1, l2 in zip(L1, L2):
+        if l1[0] > l2[0]:
+            return False
+        elif l1[0] == l2[0]:
+            continue
+        else:
+            return False
+    return True
+
+print(complist(L1, L2))

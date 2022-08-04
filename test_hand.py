@@ -1,7 +1,9 @@
 import unittest
-from enums import HandStrength, get_ranks_and_suits, get_all_handlabels
+import random
+from enums import HandStrength
 from hand import Hand
 
+random.seed(21)
 
 class TestHand(unittest.TestCase):
     
@@ -35,10 +37,23 @@ class TestHand(unittest.TestCase):
             HandStrength.HIGH_CARD.name:[11, 10, 6, 3, 2],
         }
         
+        # Some edge case hands that could be tricker comparisons
+        self.better = [
+            Hand(['2d', '6s', '9c', '9h', '2h']), # 2 pair, nines and twos with 6 kicker
+            Hand(['Jh', 'Jd', 'Jc', 'Qs', '5h']), # Trip jacks with Q-5 kickers
+            Hand(['Kc', 'Ks', 'Ad', '6c', '2h']), # TPTK
+        ]
         
+        self.worse = [
+            Hand(['4s', '8c', '4h', '8d', 'Kh']), # 2 pair, eights and fours with k kicker
+            Hand(['Jh', 'Jd', 'Jc', 'Qs', '4h']), # Trip jacks with Q-6 kickers
+            Hand(['Kd', 'Kh', 'Qd', '6c', '2h']), # TPGK (but not good enough)
+        ]
     
-    def tearDown(self):
-        pass
+    def shuffle_hand_cards(self, hand):
+        labels = hand.labels
+        random.shuffle(labels)
+        return Hand(labels)
     
     def test_made_hands(self):
         for strength, hand in self.example_hands.items():
@@ -51,6 +66,27 @@ class TestHand(unittest.TestCase):
     def test_correct_ordering(self):
         for strength, hand in self.example_hands.items():
             self.assertEqual([c.rank for c in hand], self.orderings[strength])
+    
+    def test_comparisons(self):
+        gt = list(self.example_hands.values())
+        lt = list(self.example_hands.values())[1:]
+        lt.append( Hand( ['7h', '5h', '4c', '3d', '2c'] ) )
+        for g, l in zip(gt, lt):
+            
+            self.assertGreater(g, l)
+            self.assertGreaterEqual(g, self.shuffle_hand_cards(g))
+            self.assertGreaterEqual(g, self.shuffle_hand_cards(l))
+            self.assertGreaterEqual(l, self.shuffle_hand_cards(l))
+
+            self.assertLess(l, g)
+            self.assertLessEqual(g, self.shuffle_hand_cards(g))
+            self.assertLessEqual(l, self.shuffle_hand_cards(l))
+            self.assertLessEqual(l, self.shuffle_hand_cards(g))
+            
+            self.assertNotEqual(l, g)
+        
+        for good, bad in zip(self.better, self.worse):
+            self.assertGreater(good, bad)
         
     
 if __name__ == '__main__':
