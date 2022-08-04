@@ -43,6 +43,7 @@ class Hand:
 
         self.cards = cards
         self._strength = None
+        self._draws = None
         self._current_index = 0
         self._rank_funcs = {
             # HandStrength.ROYAL_FLUSH.name: self.is_royalflush, # not important
@@ -55,6 +56,10 @@ class Hand:
             HandStrength.TWO_PAIR.name: self.is_twopair,
             HandStrength.PAIR.name: self.is_pair,
         }
+        self._draw_funcs = {
+            
+        }
+        
         self.classify_hand()
         self.sort_by_strength()
         _, self._kicker_cards = self._kickersplit()
@@ -240,6 +245,10 @@ class Hand:
 
         """
         return self._strength.name
+    
+    @property
+    def draws(self):
+        return self._draws
     
     @property
     def components(self):
@@ -475,3 +484,29 @@ tp2 = Hand(['4s', '8c', '4h', '8d', 'Kh'])
 trips1 = Hand( ['7c', '7d', '7h', 'Kc', 'Ts'] )
 pair = Hand(['3h', '3c', '6s', 'Td', 'Jh'])
 hc = Hand(['3h', '2c', '6s', 'Td', 'Jh'])
+
+# Draws
+from itertools import combinations
+
+oesd_fd = Hand(['Js', 'Ts', 'Qh',])
+full_straightwidth = []
+for card in oesd_fd:
+    straightwidth = range(
+        card.rank-4 if card.rank-4 >= 2 else 2,
+        card.rank+4 if card.rank+4 <= 14 else 14+1
+    )
+    print(card, list(straightwidth))
+    full_straightwidth.extend(list(straightwidth))
+print(set(full_straightwidth))
+
+# Looping through, we could create rankhists and suithists for each iteration and see
+possibles = list(combinations(full_straightwidth, 5-len(oesd_fd)))
+# But to do that we need to convert the ranking functions to staticmethods that receive arguments
+# Then we can pass in a hypothetical rankhist or an actual rankhist, etc.
+for p in possibles:
+    if any([p_i for p_i in p if p_i in oesd_fd.ranks]):
+        continue
+    print(list(p), oesd_fd.ranks)
+    # Now loop over all ps, get every combination of p_i and suit to create labels
+    # Then stick those together with the current drawing hand's labels.
+    # Then check if it's a straight. if it is, then put it into the draws.

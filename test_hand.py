@@ -71,20 +71,22 @@ class TestHand(unittest.TestCase):
         gt = list(self.example_hands.values())
         lt = list(self.example_hands.values())[1:]
         lt.append( Hand( ['7h', '5h', '4c', '3d', '2c'] ) )
+        
         for g, l in zip(gt, lt):
-            
+            # Greater, greater than or equal
             self.assertGreater(g, l)
             self.assertGreaterEqual(g, self.shuffle_hand_cards(g))
             self.assertGreaterEqual(g, self.shuffle_hand_cards(l))
             self.assertGreaterEqual(l, self.shuffle_hand_cards(l))
-
+            # Less, less than or equal
             self.assertLess(l, g)
             self.assertLessEqual(g, self.shuffle_hand_cards(g))
             self.assertLessEqual(l, self.shuffle_hand_cards(l))
             self.assertLessEqual(l, self.shuffle_hand_cards(g))
-            
+            # Not equal
             self.assertNotEqual(l, g)
         
+        # Test edge cases
         for good, bad in zip(self.better, self.worse):
             self.assertGreater(good, bad)
         
