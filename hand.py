@@ -1,6 +1,6 @@
 from collections import Counter
 from card import Card
-from enums import Rank, Suit, HandStrength
+from enums import HandStrength
 
 # These might be nice as staticmethods for the Hand class
 # Might require passing in a hand object instead of x because x is different for different funcs.
@@ -40,7 +40,7 @@ class Hand:
                 _found_error = [f"{c} (x{n})" for c, n in Counter(labels).most_common() if n > 1]
                 raise ValueError(f"Labels must be unique, but got: {_found_error}")
             elif (len(labels) < 1) or (len(labels) > 5):
-                raise ValueError(f"A hand must be nonzero and can only be made from a maximum of 5 cards.")
+                raise ValueError("A hand must be nonzero and can only be made from a maximum of 5 cards.")
                 
             cards = [Card(label) for label in labels]
 
@@ -77,6 +77,9 @@ class Hand:
     
     def __getitem__(self, i):
         return self.cards[i]
+    
+    def __len__(self):
+        return len(self.cards)
     
     def __repr__(self):
         return f"<Hand({self.labels})"
@@ -212,10 +215,12 @@ class Hand:
 
         """
         # if len(self) == 5: classify_madehand() else classify_draw()
-        for handstrength, fun in self._rank_funcs.items():
-            if fun():
-                self._strength = HandStrength[handstrength]
-                return
+        if len(self) == 5:
+            for handstrength, fun in self._rank_funcs.items():
+                if fun():
+                    self._strength = HandStrength[handstrength]
+                    return
+
         self._strength = HandStrength.HIGH_CARD
     
     def has(self, label):
@@ -264,7 +269,7 @@ class Hand:
         """
         return list(self.rankhist.values()) == [2, 2, 1]
 
-    def is_three_of_a_kind(x):
+    def is_three_of_a_kind(self):
         """Check if a 5-card hand is three of a kind.
         
         A hand like `Hand(['Ks', 'Kc', 'Kd', 'Td', '2d'])` has a rank histogram 
@@ -277,7 +282,7 @@ class Hand:
             a kind.
 
         """
-        return x == [3, 1, 1]
+        return list(self.rankhist.values()) == [3, 1, 1]
 
     def is_straight(self):
         """Check if a 5-card hand is a straight.
@@ -368,6 +373,7 @@ class HandSpace:
     '''
     pass
 
+sf = Hand(['Jh', '9h', 'Qh', '8h', 'Th'])
 quads = Hand(['Qc','6d', '6c',  '6h', '6s'])
 fh = Hand(['2h', '9s', '2c', '2d', '9h']) # doesn't work for full house
 flush = Hand(['6d', '3d', 'Ad', 'Jd', '9d'])
