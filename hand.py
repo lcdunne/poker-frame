@@ -2,39 +2,33 @@ from collections import Counter
 from card import Card
 from enums import HandStrength
 
-# These might be nice as staticmethods for the Hand class
-# Might require passing in a hand object instead of x because x is different for different funcs.
-# Can then go hand.rankhist or hand.rankings or hand.suithist as needed.
-
-
 class Hand:
+    """A poker hand.
+    
+    Notes
+    ----
+    Hands are compared first according to `enums.Handstrength` rankings, but 
+    if they are the same ranking, then additional checks are made to determine 
+    which hand if any is stronger than the other within the same rank.
+
+    Parameters
+    ----------
+    labels : list, optional
+        A list of card string labels, like `As`, or `2c`, from which to create 
+        the hand. The default is None.
+    cards : list, optional
+        A list of `Card` instances if these have already been created. The 
+        default is None.
+
+    Raises
+    ------
+    ValueError
+        If the the labels are non-unique.
+        If both label and cards are None.
+        If number of labels is less than 1 or greater than 5.
+
     """
-    TODO: *
-        - After ranking, hand needs to be represented:
-            1. in its natural order (e.g. Js 9s 8s Ts Qs)
-            2. in according to its category (e.g. Qs Js Ts 9s 8s). Perhaps `[*Counter(hself.rankhist).elements()]`
-                Ordering could also happen via indexes:
-                    [x for _, x in sorted(zip(Counter(h.rankhist).elements(), h.cards))]
-            - We have a .contains and a .has method. We could have a .where method with a lambda to get this.:
-                where( lambda x: x.suit == 'SPADES' ) (all spades)
-                where( lambda x: x.rank == 10 ) (all 10s)
-                ...
-            
-            - Seems like the obvious way to do this is to have masks for each hand type:
-                [2, 2, 1, 1, 0] for 2pair, for example.
-            - Or we could pop the end off:
-                
-                >>> hand = Hand(['4s', '5c', '4h', 'Ad', 'Th'])
-                >>> mask = [1,1,0,0,0]
-                >>> a = [card for i, card in enumerate(hand) if mask[i]==1]
-                >>> z = [card for i, card in enumerate(hand) if mask[i]==0]
-                >>> sorted(a, reverse=True) + sorted(z, reverse=True)
-                [<Card('4s')>, <Card('4h')>, <Card('Ad')>, <Card('Th')>, <Card('5c')>]
-                
-        - After ranking, hand needs to be represented as e.g. Twos full of Nines
-        - The cards cannot repeat! Qs and Qs cannot appear... Makes me think of a set instead of list
-    """
-    def __init__(self, labels: list=None, cards=None, ):
+    def __init__(self, labels: list=None, cards: Card=None):
         if labels is not None:
             if len(set(labels)) != len(labels):
                 _found_error = [f"{c} (x{n})" for c, n in Counter(labels).most_common() if n > 1]
@@ -83,15 +77,8 @@ class Hand:
         return len(self.cards)
     
     def __repr__(self):
-        return f"<Hand({self.labels})"
+        return f"<Hand({self.labels})>"
     
-    # Comparisons ----------- #
-    # Note on comparisons...
-    # Absolute rank is the first comparison to make.
-    # But if they are both equal, need a way to distinguish the best from hand.
-    # Given that they are sorted by this point, it should just be a case of comparing the first card.
-    # We could make a handmask attribute..
-    # We could compare rankhist
     def __lt__(self, other):
         if self._strength.value == other._strength.value:
             for l1, l2 in zip(self.components, other.components):
@@ -159,7 +146,6 @@ class Hand:
     
     def __gt__(self, other):
         if self._strength.value == other._strength.value:
-            # We need to split the hand into its components to identify which is greater.
             for l1, l2 in zip(self.components, other.components):
                 if l1[0] > l2[0]:
                     return True
@@ -280,46 +266,13 @@ class Hand:
         """
         return [c for c in self if c.rank == rank]
     
-    def get_by_count(self, count):
-        """Get a card by its count in the hand histogram.
-        
-        For example, if the hand is three of a kind, then getting all cards 
-        with a count of 1 will give the kicker.
-
-        Parameters
-        ----------
-        count : int
-            The integer count for the target return card.
-
-        Returns
-        -------
-        list
-            A list of cards with rank equal to `rank`. Returns empty list if 
-            there were no matches.
-
-        """
-        result = []
-        for rank in [k for k, v in self.rankhist.items() if v == count]:
-            result.extend( self.get_by_rank(rank) )
-        return result
-    
-    def _is_suited_or_sequential(self):
-        # Convenience function to check if the hand is either straight- or flush-like
-        return self._strength in [
-            HandStrength.FLUSH,
-            HandStrength.STRAIGHT,
-            HandStrength.STRAIGHT_FLUSH,
-        ]
-    
     def _kickersplit(self):
         mains = [comp for comp in self.components if len(comp)>1]
         kicks = [comp.pop() for comp in self.components if len(comp)==1]
-        # Check if the hand can even have a kicker:
-        #   if it's a flush or straight, then no. or if there is no 1 in the rankhist.
+
         if (len(kicks) == len(self)) or (1 not in self.rankhist.values()):
             return None, None
-        # alternatively:
-        #   [c for comp in self.components for c in comp if len(comp)==1]
+
         return mains, kicks
     
     def sort_by_strength(self):
@@ -513,7 +466,7 @@ class HandSpace:
 # example hands
 sf = Hand(['Jh', '9h', 'Qh', '8h', 'Th'])
 quads = Hand(['Qc','6d', '6c',  '6h', '6s'])
-fh = Hand(['2h', '9s', '2c', '2d', '9h']) # doesn't work for full house
+fh = Hand(['2h', '9s', '2c', '2d', '9h'])
 flush = Hand(['6d', '3d', 'Ad', 'Jd', '9d'])
 straight = Hand(['7d', '9d', '5h', '8d', '6c'])
 trips = Hand(['Qc', '6d', 'Ah', '6h', '6s'])
