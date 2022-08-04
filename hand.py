@@ -38,7 +38,7 @@ class Hand:
                 
             cards = [Card(label) for label in labels]
 
-        elif all([labels is None, cards is None]):
+        elif (labels is None) and (cards is None):
             raise ValueError("Expected either `label`, or both of `rank` and `suit`.")
 
         self.cards = cards
@@ -495,9 +495,9 @@ for card in oesd_fd:
         card.rank-4 if card.rank-4 >= 2 else 2,
         card.rank+4 if card.rank+4 <= 14 else 14+1
     )
-    print(card, list(straightwidth))
+    # print(card, list(straightwidth))
     full_straightwidth.extend(list(straightwidth))
-print(set(full_straightwidth))
+# print(set(full_straightwidth))
 
 # Looping through, we could create rankhists and suithists for each iteration and see
 possibles = list(combinations(full_straightwidth, 5-len(oesd_fd)))
@@ -506,7 +506,8 @@ possibles = list(combinations(full_straightwidth, 5-len(oesd_fd)))
 for p in possibles:
     if any([p_i for p_i in p if p_i in oesd_fd.ranks]):
         continue
-    print(list(p), oesd_fd.ranks)
+    # print(list(p), oesd_fd.ranks)
+    
     # Now loop over all ps, get every combination of p_i and suit to create labels
     # Then stick those together with the current drawing hand's labels.
     # Then check if it's a straight. if it is, then put it into the draws.
