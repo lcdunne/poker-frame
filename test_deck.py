@@ -1,15 +1,8 @@
 import unittest
 from deck import Deck
-from enums import Rank, Suit, get_ranks_and_suits, get_all_handlabels
+from enums import Suit, get_all_handlabels
 
 class TestDeck(unittest.TestCase):
-    
-    def setUp(self):
-        pass
-    
-    def tearDown(self):
-        pass
-    
     
     def test_shuffle(self):
         deck = Deck()

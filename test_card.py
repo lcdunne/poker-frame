@@ -4,12 +4,6 @@ from card import Card
 
 class TestCard(unittest.TestCase):
     
-    def setUp(self):
-        pass
-    
-    def tearDown(self):
-        pass
-    
     
     def test_card_labels_by_ranksuit(self):
         # Loop over all ranks and suits and test that labels are as expected.
