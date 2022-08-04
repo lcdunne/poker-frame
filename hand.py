@@ -162,8 +162,22 @@ class Hand:
         """
         return self._strength.name
     
-    def using(self):
-        return sum([i for i in self.rankhist.values() if i > 1])
+    def getbyrank(self, rank):
+        """Get a card by its rank.
+
+        Parameters
+        ----------
+        rank : int
+            The integer ranking for the target return card.
+
+        Returns
+        -------
+        list
+            A list of cards with rank equal to `rank`. Returns empty list if 
+            there were no matches.
+
+        """
+        return [c for c in self if c.rank == rank]
     
     def sort_by_strength(self):
         """Sort the hand based on its strength and according to the histogram.
@@ -181,51 +195,10 @@ class Hand:
         None.
 
         """
-        exploded = list(Counter(self.rankhist).elements())
-        # Now we can get by rank for each rank in exploded and append it
         x = []
         for rank in self.rankhist:
             x.extend(self.getbyrank(rank))
         self.cards = x
-
-        # # Create a mapping of each card to the sorted ranks based on their histogram
-        # card_rank_mapper = sorted(zip(self.cards, self.ranks))
-        # card_rank_mapper = sorted(zip(self.cards, list(Counter(self.rankhist).elements())))
-        
-        # # Order the hand to make sure the components defining its classification are first
-        # self.cards = [i for i, _ in card_rank_mapper]
-        
-        # # Mask the components of the hand that define its classification
-        # # E.g. [1,1,1,0,0] for trips. They always appear first now.
-        # mask = [1 if i < self.using() else 0 for i in range(len(self.cards))]
-        
-        # # Extract the component that defines the hand classification & sort
-        # a = sorted([card for i, card in enumerate(self.cards) if mask[i]==1], reverse=True)
-        # # Extract the component that does not define the hand classification & sort
-        # z = sorted([card for i, card in enumerate(self.cards) if mask[i]==0], reverse=True)
-        
-        # # Stick them back together
-        # self.cards = a + z
-        
-        # # Finally full house or 2pair is an exception so the initial sorting needs repeating
-        # if self.strength == HandStrength.FULL_HOUSE.name:
-        #     card_rank_mapper = sorted(zip(self.cards, list(Counter(self.rankhist).elements())))
-        #     # Order the hand to make sure the components defining its classification are first
-        #     self.cards = [i for i, _ in card_rank_mapper]
-        # elif self.strength == HandStrength.TWO_PAIR.name:
-        #     card_rank_mapper = zip(self.cards, list(Counter(self.rankhist).elements()))
-        #     self.cards = [i for i, _ in card_rank_mapper]
-        
-        
-        # # card_rank_mapper = sorted(zip(self.cards, Counter(self.rankhist).elements()), reverse=True)
-        # # self.cards = [i for i, _ in card_rank_mapper]
-        # # mask = [1 if i < self.using() else 0 for i in range(len(self.cards))]
-        # # a = [card for i, card in enumerate(self.cards) if mask[i]==1]
-        # # z = [card for i, card in enumerate(self.cards) if mask[i]==0]
-        # # self.cards = sorted(a, reverse=True) + sorted(z, reverse=True)
-        # # # Full house is 
-        # # if list(self.rankhist.values()) == [3,2]:
-        # #     self.cards = [i for i, _ in sorted(zip(self.cards, Counter(self.rankhist).elements()))]
     
     def classify_hand(self):
         """Classify strength of hand.
@@ -377,9 +350,6 @@ class Hand:
 
         """
         return self.is_straight() and self.is_flush()
-    
-    def getbyrank(self, rank):
-        return [c for c in self if c.rank == rank]
 
 
 class HandSpace:
