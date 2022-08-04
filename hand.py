@@ -39,6 +39,9 @@ class Hand:
             if len(set(labels)) != len(labels):
                 _found_error = [f"{c} (x{n})" for c, n in Counter(labels).most_common() if n > 1]
                 raise ValueError(f"Labels must be unique, but got: {_found_error}")
+            elif (len(labels) < 1) or (len(labels) > 5):
+                raise ValueError(f"A hand must be nonzero and can only be made from a maximum of 5 cards.")
+                
             cards = [Card(label) for label in labels]
 
         elif all([labels is None, cards is None]):
@@ -162,7 +165,7 @@ class Hand:
         """
         return self._strength.name
     
-    def getbyrank(self, rank):
+    def get_by_rank(self, rank):
         """Get a card by its rank.
 
         Parameters
@@ -197,7 +200,7 @@ class Hand:
         """
         x = []
         for rank in self.rankhist:
-            x.extend(self.getbyrank(rank))
+            x.extend(self.get_by_rank(rank))
         self.cards = x
     
     def classify_hand(self):
@@ -208,6 +211,7 @@ class Hand:
         None.
 
         """
+        # if len(self) == 5: classify_madehand() else classify_draw()
         for handstrength, fun in self._rank_funcs.items():
             if fun():
                 self._strength = HandStrength[handstrength]
@@ -353,6 +357,15 @@ class Hand:
 
 
 class HandSpace:
+    '''
+    A hand space is an abstract representation of all possible holdings given a 
+    set of cards in the range [2, 7]. A handspace from just two cards reflects 
+    having been dealt two holecards but no flop. A handspace from five cards 
+    reflects having been dealt two holecards and the flop, and will necessarily 
+    contain just one combination for the five-card hand. Handspaces of 6 and 7 
+    cards increase the number of combinations and reflect having seen the turn 
+    and river, respectively.
+    '''
     pass
 
 quads = Hand(['Qc','6d', '6c',  '6h', '6s'])
