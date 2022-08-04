@@ -63,6 +63,7 @@ class Hand:
         }
         self.classify_hand()
         self.sort_by_strength()
+        _, self._kicker_cards = self._kickersplit()
     
     def __iter__(self):
         return self
@@ -254,6 +255,14 @@ class Hand:
         """
         return self._strength.name
     
+    @property
+    def components(self):
+        return [self.get_by_rank(k) for k in self.rankhist]
+    
+    @property
+    def kicker(self):
+        return self._kicker_cards
+    
     def get_by_rank(self, rank):
         """Get a card by its rank.
 
@@ -302,30 +311,16 @@ class Hand:
             HandStrength.STRAIGHT_FLUSH,
         ]
     
-    def kickersplit(self):
-        self.kicker = self.get_by_count(1)
-        if self._is_suited_or_sequential():
-            # No kicker. Maybe return (self.cards, [])
-            return
-        mains = [c for c in self.cards if self.rankhist[c.rank] > 1]
-        kicks = [c for c in self.cards if self.rankhist[c.rank] == 1]
+    def _kickersplit(self):
+        mains = [comp for comp in self.components if len(comp)>1]
+        kicks = [comp.pop() for comp in self.components if len(comp)==1]
+        # Check if the hand can even have a kicker:
+        #   if it's a flush or straight, then no. or if there is no 1 in the rankhist.
+        if (len(kicks) == len(self)) or (1 not in self.rankhist.values()):
+            return None, None
+        # alternatively:
+        #   [c for comp in self.components for c in comp if len(comp)==1]
         return mains, kicks
-    
-    @property
-    def components(self):
-        # Split the hand into component parts based on its ranking histogram.
-        # Hand(['9c', '9h', '2d', '2h', '6s'] becomes [[<('9c')>, <('9h')>], [<('2d')>, <('2h')>], [<('6s')>]]
-        # result = []
-        # for k in self.rankhist:
-        #     result.append( self.get_by_rank(k) )
-        # return result
-        return [self.get_by_rank(k) for k in self.rankhist]
-        
-        
-    
-    
-    def mask(self):
-        pass
     
     def sort_by_strength(self):
         """Sort the hand based on its strength and according to the histogram.
@@ -515,6 +510,7 @@ class HandSpace:
     '''
     pass
 
+# example hands
 sf = Hand(['Jh', '9h', 'Qh', '8h', 'Th'])
 quads = Hand(['Qc','6d', '6c',  '6h', '6s'])
 fh = Hand(['2h', '9s', '2c', '2d', '9h']) # doesn't work for full house
@@ -526,48 +522,3 @@ tp2 = Hand(['4s', '8c', '4h', '8d', 'Kh'])
 trips1 = Hand( ['7c', '7d', '7h', 'Kc', 'Ts'] )
 pair = Hand(['3h', '3c', '6s', 'Td', 'Jh'])
 hc = Hand(['3h', '2c', '6s', 'Td', 'Jh'])
-
-# # if it isn't straight or flush, then its components are:
-# #  each unique count > 1 and 
-# for A, B in zip(tp1.rankhist, tp2.rankhist):
-#     # zip self.rankhist, other.rankhist
-#     print(A, B)
-
-hand = tp1
-other = tp2
-
-A = list(Counter(hand.rankhist).elements())
-B = list(Counter(other.rankhist).elements())
-
-# for i, j in zip(A, B):
-#     if i > j:
-#         return True
-#     else:
-#         return False
-
-# Because the hands by this point are arranged semantically, then we can simply compare the first element:
-# [c1 > c2 for c1, c2 in zip(hand, other)][0].. or just hand[0] > other[0]...
-
-
-# for h1c, h2c in zip(hand.components, other.components):
-#     print(h1c, h2c)
-#     if h1c[0] > h2c[0]:
-#         print("\tH1 > H2")
-#     elif h1c[0] == h2c[0]:
-#         print("The same")
-
-L1 = [ [7, 7], [5, 6], [4] ]
-L2 = [ [7, 7], [5, 5], [4] ]
-
-def complist(L1, L2):
-    # Is L1 equal to L2?
-    for l1, l2 in zip(L1, L2):
-        if l1[0] > l2[0]:
-            return False
-        elif l1[0] == l2[0]:
-            continue
-        else:
-            return False
-    return True
-
-print(complist(L1, L2))
