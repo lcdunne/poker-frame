@@ -12,11 +12,25 @@ class Hand:
     TODO: *
         - After ranking, hand needs to be represented:
             1. in its natural order (e.g. Js 9s 8s Ts Qs)
-            2. in according to its category (e.g. Qs Js Ts 9s 8s)
+            2. in according to its category (e.g. Qs Js Ts 9s 8s). Perhaps `[*Counter(hself.rankhist).elements()]`
+                Ordering could also happen via indexes:
+                    [x for _, x in sorted(zip(Counter(h.rankhist).elements(), h.cards))]
             - We have a .contains and a .has method. We could have a .where method with a lambda to get this.:
                 where( lambda x: x.suit == 'SPADES' ) (all spades)
                 where( lambda x: x.rank == 10 ) (all 10s)
                 ...
+            
+            - Seems like the obvious way to do this is to have masks for each hand type:
+                [2, 2, 1, 1, 0] for 2pair, for example.
+            - Or we could pop the end off:
+                
+                >>> hand = Hand(['4s', '5c', '4h', 'Ad', 'Th'])
+                >>> mask = [1,1,0,0,0]
+                >>> a = [card for i, card in enumerate(hand) if mask[i]==1]
+                >>> z = [card for i, card in enumerate(hand) if mask[i]==0]
+                >>> sorted(a, reverse=True) + sorted(z, reverse=True)
+                [<Card('4s')>, <Card('4h')>, <Card('Ad')>, <Card('Th')>, <Card('5c')>]
+                
         - After ranking, hand needs to be represented as e.g. Twos full of Nines
         - The cards cannot repeat! Qs and Qs cannot appear... Makes me think of a set instead of list
     """
@@ -45,6 +59,7 @@ class Hand:
             HandStrength.PAIR.name: self.is_pair,
         }
         self.classify_hand()
+        self.sort_by_strength()
     
     def __iter__(self):
         return self
@@ -146,6 +161,71 @@ class Hand:
 
         """
         return self._strength.name
+    
+    def using(self):
+        return sum([i for i in self.rankhist.values() if i > 1])
+    
+    def sort_by_strength(self):
+        """Sort the hand based on its strength and according to the histogram.
+        
+        Notes
+        -----
+        A hand like `Hand(['Ks', 'Tc', 'Ts', 'Td', 'Th'])` becomes 
+        `Hand(['Tc', 'Ts', 'Td', 'Th', 'Ks'])`
+        
+        A a hand like `Hand(['4s', '5c', '4h', '5d', 'Kh'])` becomes 
+        `Hand(['5c', '5d', '4s', '4h', 'Kh'])`.
+
+        Returns
+        -------
+        None.
+
+        """
+        exploded = list(Counter(self.rankhist).elements())
+        # Now we can get by rank for each rank in exploded and append it
+        x = []
+        for rank in self.rankhist:
+            x.extend(self.getbyrank(rank))
+        self.cards = x
+
+        # # Create a mapping of each card to the sorted ranks based on their histogram
+        # card_rank_mapper = sorted(zip(self.cards, self.ranks))
+        # card_rank_mapper = sorted(zip(self.cards, list(Counter(self.rankhist).elements())))
+        
+        # # Order the hand to make sure the components defining its classification are first
+        # self.cards = [i for i, _ in card_rank_mapper]
+        
+        # # Mask the components of the hand that define its classification
+        # # E.g. [1,1,1,0,0] for trips. They always appear first now.
+        # mask = [1 if i < self.using() else 0 for i in range(len(self.cards))]
+        
+        # # Extract the component that defines the hand classification & sort
+        # a = sorted([card for i, card in enumerate(self.cards) if mask[i]==1], reverse=True)
+        # # Extract the component that does not define the hand classification & sort
+        # z = sorted([card for i, card in enumerate(self.cards) if mask[i]==0], reverse=True)
+        
+        # # Stick them back together
+        # self.cards = a + z
+        
+        # # Finally full house or 2pair is an exception so the initial sorting needs repeating
+        # if self.strength == HandStrength.FULL_HOUSE.name:
+        #     card_rank_mapper = sorted(zip(self.cards, list(Counter(self.rankhist).elements())))
+        #     # Order the hand to make sure the components defining its classification are first
+        #     self.cards = [i for i, _ in card_rank_mapper]
+        # elif self.strength == HandStrength.TWO_PAIR.name:
+        #     card_rank_mapper = zip(self.cards, list(Counter(self.rankhist).elements()))
+        #     self.cards = [i for i, _ in card_rank_mapper]
+        
+        
+        # # card_rank_mapper = sorted(zip(self.cards, Counter(self.rankhist).elements()), reverse=True)
+        # # self.cards = [i for i, _ in card_rank_mapper]
+        # # mask = [1 if i < self.using() else 0 for i in range(len(self.cards))]
+        # # a = [card for i, card in enumerate(self.cards) if mask[i]==1]
+        # # z = [card for i, card in enumerate(self.cards) if mask[i]==0]
+        # # self.cards = sorted(a, reverse=True) + sorted(z, reverse=True)
+        # # # Full house is 
+        # # if list(self.rankhist.values()) == [3,2]:
+        # #     self.cards = [i for i, _ in sorted(zip(self.cards, Counter(self.rankhist).elements()))]
     
     def classify_hand(self):
         """Classify strength of hand.
@@ -255,7 +335,6 @@ class Hand:
             Whether or not the hand is comprised of a single suit.
 
         """
-        
         return len(self.suithist) == 1
 
     def is_full_house(self):
@@ -298,10 +377,20 @@ class Hand:
 
         """
         return self.is_straight() and self.is_flush()
-
+    
+    def getbyrank(self, rank):
+        return [c for c in self if c.rank == rank]
 
 
 class HandSpace:
     pass
 
-h = Hand(['Ks', 'Tc', 'Ts', 'Td', 'Th'])
+quads = Hand(['Qc','6d', '6c',  '6h', '6s'])
+fh = Hand(['2h', '9s', '2c', '2d', '9h']) # doesn't work for full house
+flush = Hand(['6d', '3d', 'Ad', 'Jd', '9d'])
+straight = Hand(('7d', '9d','5d','8d','6d'))
+trips = Hand(['Qc', '6d', 'Ah', '6h', '6s'])
+twopair = Hand(['2d', '6s', '9c', '9h', '2h'])
+twopair = Hand(['4s', '5c', '4h', '5d', 'Kh'])
+pair = Hand(['3h', '3c', '6s', 'Td', 'Jh'])
+hc = Hand(['3h', '2c', '6s', 'Td', 'Jh'])
