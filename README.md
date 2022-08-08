@@ -1,4 +1,4 @@
-# pokerpy
+# poker-frame
 
 First attempt at a poker hand simulator. Currently capable of creating a hand and ranking it from among the available 5-card hands in Texas hold 'em Poker.
 
