@@ -1,4 +1,5 @@
 from collections import Counter
+from itertools import combinations
 from card import Card
 from enums import HandStrength
 
@@ -461,53 +462,132 @@ class Hand:
 
 
 class HandSpace:
-    '''
-    A hand space is an abstract representation of all possible holdings given a 
-    set of cards in the range [2, 7]. A handspace from just two cards reflects 
-    having been dealt two holecards but no flop. A handspace from five cards 
-    reflects having been dealt two holecards and the flop, and will necessarily 
-    contain just one combination for the five-card hand. Handspaces of 6 and 7 
-    cards increase the number of combinations and reflect having seen the turn 
-    and river, respectively.
-    '''
-    pass
-
-# example hands
-sf = Hand(['Jh', '9h', 'Qh', '8h', 'Th'])
-quads = Hand(['Qc','6d', '6c',  '6h', '6s'])
-fh = Hand(['2h', '9s', '2c', '2d', '9h'])
-flush = Hand(['6d', '3d', 'Ad', 'Jd', '9d'])
-straight = Hand(['7d', '9d', '5h', '8d', '6c'])
-trips = Hand(['Qc', '6d', 'Ah', '6h', '6s'])
-tp1 = Hand(['2d', '6s', '9c', '9h', '2h'])
-tp2 = Hand(['4s', '8c', '4h', '8d', 'Kh'])
-trips1 = Hand( ['7c', '7d', '7h', 'Kc', 'Ts'] )
-pair = Hand(['3h', '3c', '6s', 'Td', 'Jh'])
-hc = Hand(['3h', '2c', '6s', 'Td', 'Jh'])
-
-# Draws
-from itertools import combinations
-
-oesd_fd = Hand(['Js', 'Ts', 'Qh',])
-full_straightwidth = []
-for card in oesd_fd:
-    straightwidth = range(
-        card.rank-4 if card.rank-4 >= 2 else 2,
-        card.rank+4 if card.rank+4 <= 14 else 14+1
-    )
-    # print(card, list(straightwidth))
-    full_straightwidth.extend(list(straightwidth))
-# print(set(full_straightwidth))
-
-# Looping through, we could create rankhists and suithists for each iteration and see
-possibles = list(combinations(full_straightwidth, 5-len(oesd_fd)))
-# But to do that we need to convert the ranking functions to staticmethods that receive arguments
-# Then we can pass in a hypothetical rankhist or an actual rankhist, etc.
-for p in possibles:
-    if any([p_i for p_i in p if p_i in oesd_fd.ranks]):
-        continue
-    # print(list(p), oesd_fd.ranks)
+    """A hand space.
     
-    # Now loop over all ps, get every combination of p_i and suit to create labels
-    # Then stick those together with the current drawing hand's labels.
-    # Then check if it's a straight. if it is, then put it into the draws.
+    Space of all possible holdings given a set of cards.
+
+    Parameters
+    ----------
+    hole_cards : list
+        A pair of two hole cards.
+    community_cards : list, optional
+        List of community cards. The default is None.
+
+    Returns
+    -------
+    None.
+
+    """
+
+    def __init__(self, hole_cards: list, community_cards: list = None):
+        
+        self.hole_cards = hole_cards
+        self.community_cards = community_cards or []
+        self.space = sorted( self.hole_cards + self.community_cards, reverse=True )
+        self._hands = {x: [] for x in HandStrength.values()}
+        self.find_best_hand()
+    
+    @property
+    def best_hand(self):
+        """Hand: The best hand from the entire hand space."""
+        return self._best_hand
+    
+    @property
+    def hands(self):
+        """dict: A dictionary of all hands, ordered by RankStrength, in the hand space."""
+        return self._hands.copy()
+    
+    @property
+    def uses_hole_cards(self):
+        """int: The number of hole cards used to make the best hand."""
+        return sum([hc in self.best_hand.cards for hc in self.hole_cards])
+    
+    def get_combos(self):
+        """Get all card combinations from the hole and community cards.
+
+        Returns
+        -------
+        itertools.combinations
+            A combinations iterator containing all available hand combinations.
+
+        """
+        return combinations(self.space, min(5, len(self.space)))
+    
+    def find_all_hands(self):
+        """Get all hand combinations from the card combinations. Stores them as 
+        a dictionary, accessible via the `.hands` property.
+
+        Returns
+        -------
+        None.
+
+        """
+        # From the entire hand space, finds all available made hands
+        for i, hand_combination in enumerate( self.get_combos() ):
+            hand = Hand(cards=hand_combination)
+            self._hands[hand._strength.value].append( hand )
+        self._hands = {k: v for k, v in self._hands.items() if v}
+    
+    def find_best_hand(self):
+        """Find the best hand available.
+
+        Returns
+        -------
+        Hand
+            The best hand available from all possible hands in the hand space.
+
+        """
+        self.find_all_hands()
+        self._best_hand = max(self._hands[max(self._hands)])
+        return self._best_hand
+
+# hc = [Card('Th'), Card('Qh')]
+# comm = [Card('Jd'), Card('Qd'), Card('2s'), Card('Td'), Card('2d')]
+# hs = HandSpace(hc)
+
+# # hand = Hand(cards=(list(hs.get_combos()))[0])
+
+# for i, hc in enumerate(hs._get_combos()):
+#     # hand = Hand(hc)
+#     print(i, hc, len(hc))
+
+
+# # example hands
+# sf = Hand(['Jh', '9h', 'Qh', '8h', 'Th'])
+# quads = Hand(['Qc','6d', '6c',  '6h', '6s'])
+# fh = Hand(['2h', '9s', '2c', '2d', '9h'])
+# flush = Hand(['6d', '3d', 'Ad', 'Jd', '9d'])
+# straight = Hand(['7d', '9d', '5h', '8d', '6c'])
+# trips = Hand(['Qc', '6d', 'Ah', '6h', '6s'])
+# tp1 = Hand(['2d', '6s', '9c', '9h', '2h'])
+# tp2 = Hand(['4s', '8c', '4h', '8d', 'Kh'])
+# trips1 = Hand( ['7c', '7d', '7h', 'Kc', 'Ts'] )
+# pair = Hand(['3h', '3c', '6s', 'Td', 'Jh'])
+# hc = Hand(['3h', '2c', '6s', 'Td', 'Jh'])
+
+# # Draws
+# from itertools import combinations
+
+# oesd_fd = Hand(['Js', 'Ts', 'Qh',])
+# full_straightwidth = []
+# for card in oesd_fd:
+#     straightwidth = range(
+#         card.rank-4 if card.rank-4 >= 2 else 2,
+#         card.rank+4 if card.rank+4 <= 14 else 14+1
+#     )
+#     # print(card, list(straightwidth))
+#     full_straightwidth.extend(list(straightwidth))
+# # print(set(full_straightwidth))
+
+# # Looping through, we could create rankhists and suithists for each iteration and see
+# possibles = list(combinations(full_straightwidth, 5-len(oesd_fd)))
+# # But to do that we need to convert the ranking functions to staticmethods that receive arguments
+# # Then we can pass in a hypothetical rankhist or an actual rankhist, etc.
+# for p in possibles:
+#     if any([p_i for p_i in p if p_i in oesd_fd.ranks]):
+#         continue
+#     # print(list(p), oesd_fd.ranks)
+    
+#     # Now loop over all ps, get every combination of p_i and suit to create labels
+#     # Then stick those together with the current drawing hand's labels.
+#     # Then check if it's a straight. if it is, then put it into the draws.
