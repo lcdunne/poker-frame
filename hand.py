@@ -47,8 +47,8 @@ class Hand:
         self._draws = None
         self._current_index = 0
         self._rank_funcs = {
-            # HandStrength.ROYAL_FLUSH.name: self.is_royalflush, # not important
-            HandStrength.STRAIGHT_FLUSH.name: self.is_straightflush,
+            HandStrength.ROYAL_FLUSH.name: self.is_royal_flush,
+            HandStrength.STRAIGHT_FLUSH.name: self.is_straight_flush,
             HandStrength.FOUR_OF_A_KIND.name: self.is_four_of_a_kind,
             HandStrength.FULL_HOUSE.name: self.is_full_house,
             HandStrength.FLUSH.name: self.is_flush,
@@ -447,7 +447,7 @@ class Hand:
         """
         return list(self.rankhist.values()) == [4, 1]
 
-    def is_straightflush(self):
+    def is_straight_flush(self):
         """Check if a 5-card hand is a straight flush.
         
         See `Hand.is_flush` and `Hand.is_straight` for details.
@@ -459,6 +459,19 @@ class Hand:
 
         """
         return self.is_straight() and self.is_flush()
+    
+    def is_royal_flush(self):
+        """Check if a 5-card hand is a royal flush.
+        
+        See `Hand.is_straight_flush` for details.
+
+        Returns
+        -------
+        bool
+            Whether or not the hand is a Royal Flush.
+
+        """
+        return self.is_straight_flush() and max(self.ranks) == 14
 
 
 class HandSpace:
