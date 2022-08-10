@@ -58,7 +58,7 @@ True
 To test that the implementation is correct, I simulated a large number of 5-card hand deals to see the resulting distribution of hand strengths. This was then compared with those that would be expected by chance, based on their known probabilities of occurrence ([see here](https://en.wikipedia.org/wiki/Texas_hold_%27em)).
 
 The simulation ran 10m hands and appeared to match the expected probabilities for each hand:
-<img src="https://github.com/lcdunne/poker-frame/raw/main/2022-08-09T2120_simulation-results.png" alt="" width="620">
+<img src="https://github.com/lcdunne/poker-frame/raw/develop/2022-08-09T2120_simulation-results.png" alt="" width="620">
 
 Simulation results table:
 
