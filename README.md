@@ -61,10 +61,12 @@ To test that the implementation is correct, I simulated a large number of 5-card
 The simulation ran 10m hands and appeared to match the expected probabilities for each hand:
 <img src="https://github.com/lcdunne/poker-frame/raw/main/2022-08-09T2120_simulation-results.png" alt="" width="620">
 
+Note: the deviation from expected becomes larger as the observations become rarer (i.e. Straight Flush [#2] & Royal Flush [#1]).
+
 Simulation results table:
 
 | Hand                                                | Probability | Observed | Expected |
-|-----------------------------------------------------|-------------|----------|----------|
+| --------------------------------------------------- | ----------- | -------- | -------- |
 | Royal flush                                         | 1.54E-06    | 25       | 15.4     |
 | Straight flush (excluding royal flush)              | 1.39E-05    | 128      | 139      |
 | Four of a kind                                      | 0.0002401   | 2361     | 2401     |
