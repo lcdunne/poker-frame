@@ -16,6 +16,7 @@ First attempt at a poker hand simulator. Currently capable of creating a hand an
 
 >>> print(hand)
 <Hand(['As', 'Ks', 'Qs', 'Js', 'Ts'])>
+
 >>> print(hand.strength)
 ROYAL_FLUSH
 ```
@@ -47,7 +48,7 @@ We can also create specific hands from a list of hand labels like `['As', 'Ks', 
 <Hand(['Js', 'Ts', '9s', '8s', '7s'])> STRAIGHT_FLUSH
 
 >>>print(hand_2, hand_2.strength)
-<Hand(['9h', '9d', '9s', '9c', '2h'])> FOUR_OF_A_KIND)
+<Hand(['9h', '9d', '9s', '9c', '2h'])> FOUR_OF_A_KIND
 
 >>> hand_1 > hand_2
 True
