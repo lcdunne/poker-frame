@@ -136,6 +136,7 @@ class Deck:
             return taken
         
         if n is None:
+            # Default is None because this function acts in place.
             raise ValueError("Must specify either n, labels, or lambda function.")
         return [self.cards.pop() for _ in range(n)]
 

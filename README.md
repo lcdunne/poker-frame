@@ -5,14 +5,19 @@ First attempt at a poker hand simulator. Currently capable of creating a hand an
 ## Examples
 
 ```python
->>> from card import *
+>>> from deck import Deck
+>>> from hand import Hand
 
 >>> deck = Deck()
+>>> deck.fan()
+[<Card('2c')>, <Card('2d')>, <Card('2h')>, <Card('2s')>, <Card('3c')>]
 
->>> hand = Hand(deck.take(5))
+>>> hand = Hand(cards=deck.take(5))
 
 >>> print(hand)
-Hand: ROYAL_FLUSH (As,Ks,Qs,Js,Ts)
+<Hand(['As', 'Ks', 'Qs', 'Js', 'Ts'])>
+>>> print(hand.strength)
+ROYAL_FLUSH
 ```
 
 To shuffle the deck before drawing a hand:
@@ -20,10 +25,13 @@ To shuffle the deck before drawing a hand:
 ```python
 >>> deck.shuffle()
 
->>> hand = Hand(deck.take(5))
+>>> hand = Hand(cards=deck.take(5))
 
 >>> print(hand)
-Hand: PAIR (Ac,9s,6c,2s,Ah)
+<Hand(['Tc', 'Td', 'Qh', '7d', '5d'])>
+
+>>> print(hand.strength)
+PAIR
 ```
 
 We can also create specific hands from a list of hand labels like `['As', 'Ks', 'Qs', 'Js', 'Ts']`, and different hands can be directly compared based on their strength:
@@ -31,55 +39,44 @@ We can also create specific hands from a list of hand labels like `['As', 'Ks', 
 ```python
 >>> deck = Deck()
 
->>> hand_1 = Hand(names=['Js', 'Ts', '9s', '8s', '7s'])
+>>> hand_1 = Hand(['Js', 'Ts', '9s', '8s', '7s'])
 
->>> hand_2 = Hand(names=['9h', '9d', '9s', '9c', '2h'])
+>>> hand_2 = Hand(['9h', '9d', '9s', '9c', '2h'])
 
->>> print(hand_1)
-Hand: STRAIGHT_FLUSH (Js,Ts,9s,8s,7s)
+>>> print(hand_1, hand_1.strength)
+<Hand(['Js', 'Ts', '9s', '8s', '7s'])> STRAIGHT_FLUSH
 
->>> print(hand_2)
-Hand: FOUR_OF_A_KIND (9h,9d,9s,9c,2h)
+>>>print(hand_2, hand_2.strength)
+<Hand(['9h', '9d', '9s', '9c', '2h'])> FOUR_OF_A_KIND)
 
 >>> hand_1 > hand_2
+True
 ```
 
 ## A Simulation
 
-The idea was to take the known probabilities for each made hand ([see here](https://en.wikipedia.org/wiki/Texas_hold_%27em)), simulate a large number of 5-card hand deals, and see the resulting distribution of hand strengths to compare with those that would be expected.
+To test that the implementation is correct, I simulated a large number of 5-card hand deals to see the resulting distribution of hand strengths. This was then compared with those that would be expected by chance, based on their known probabilities of occurrence ([see here](https://en.wikipedia.org/wiki/Texas_hold_%27em)).
 
-The simulation ran 10m hands and appeared to match the expected probabilities of each hand:
-<img src="https://github.com/lcdunne/pokerpy/raw/main/2022-08-01T1544_simulation-results.png" alt="" width="620">
+The simulation ran 10m hands and appeared to match the expected probabilities for each hand:
+<img src="https://github.com/lcdunne/poker-frame/raw/main/2022-08-09T2120_simulation-results.png" alt="" width="620">
 
 Simulation results table:
 
 | Hand                                                | Probability | Observed | Expected |
-| --------------------------------------------------- | ----------- | -------- | -------- |
-| Royal flush                                         | 1.54E-06    | 30       | 15.4     |
-| Straight flush (excluding royal flush)              | 1.39E-05    | 136      | 139      |
-| Four of a kind                                      | 0.00024     | 2373     | 2401     |
-| Full house                                          | 0.001441    | 14415    | 14410    |
-| Flush (excluding royal flush and straight flush)    | 0.001965    | 19656    | 19650    |
-| Straight (excluding royal flush and straight flush) | 0.003925    | 39504    | 39250    |
-| Three of a kind                                     | 0.021128    | 210887   | 211280   |
-| Two pair                                            | 0.047539    | 475259   | 475390   |
-| One pair                                            | 0.422569    | 4224349  | 4225690  |
-| No pair / High card                                 | 0.501177    | 5013391  | 5011770  |
+|-----------------------------------------------------|-------------|----------|----------|
+| Royal flush                                         | 1.54E-06    | 25       | 15.4     |
+| Straight flush (excluding royal flush)              | 1.39E-05    | 128      | 139      |
+| Four of a kind                                      | 0.0002401   | 2361     | 2401     |
+| Full house                                          | 0.001441    | 14272    | 14410    |
+| Flush (excluding royal flush and straight flush)    | 0.001965    | 19581    | 19650    |
+| Straight (excluding royal flush and straight flush) | 0.003925    | 38988    | 39250    |
+| Three of a kind                                     | 0.021128    | 211165   | 211280   |
+| Two pair                                            | 0.047539    | 475173   | 475390   |
+| One pair                                            | 0.422569    | 4226364  | 4225690  |
+| No pair / High card                                 | 0.501177    | 5011943  | 5011770  |
 
 ## TODO:
 
-- Create main unittests
-- Break up into modules
-- Major improvements:
-  - Extract all hand evaluation methods and create new HandEvaluator class (?) to handle this (or just a module of functions)
-  - Make sure HIGH_CARD is not considered a made hand
-  - 
-
 ## DOING:
 
-- Write tests
-- Decide between `.label` or `.name` for refs like `'Ts', 'Jh', 'Qc', ...`. The problem with name is that it interfered with enums.
-
 ## DONE:
-
-- Clearing up
