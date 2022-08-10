@@ -16,7 +16,7 @@ class Deck:
     """
     def __init__(self):
         self.cards = [
-            Card(rank=r, suit=s) for r,s in product(Rank.values(), Suit.items())
+            Card(rank=r, suit=s) for s,r in product(Suit.items(), Rank.values())
         ]
         self._current_index = 0
     
