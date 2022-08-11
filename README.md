@@ -35,7 +35,7 @@ To shuffle the deck before drawing a hand:
 PAIR
 ```
 
-We can also create specific hands from a list of hand labels like `['As', 'Ks', 'Qs', 'Js', 'Ts']`, and different hands can be directly compared based on their strength:
+Different hands can be directly compared based on their strength:
 
 ```python
 >>> deck = Deck()
